@@ -1,0 +1,43 @@
+name: Enforce Merge Policy
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - develop
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  check-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if user can merge directly or needs approval
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const allowedUsers = process.env.ALLOWED_USERS.split(" ");
+            const prAuthor = context.actor;
+
+            if (allowedUsers.includes(prAuthor)) {
+              return;
+            }
+
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            const approvals = reviews.filter(r => 
+              r.state === "APPROVED" && allowedUsers.includes(r.user.login)
+            );
+
+            if (approvals.length < 1) {
+              throw new Error(`❌ ${prAuthor} is not allowed to merge directly and this PR has no approvals from allowed users.`);
+            }
+        env:
+          ALLOWED_USERS: ${{ secrets.ALLOWED_USERS }}
