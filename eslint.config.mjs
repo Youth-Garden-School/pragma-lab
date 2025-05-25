@@ -1,32 +1,32 @@
-import { FlatCompat } from '@eslint/eslintrc';
-import js from '@eslint/js';
-import { createRequire } from 'module';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { FlatCompat } from '@eslint/eslintrc'
+import js from '@eslint/js'
+import { createRequire } from 'module'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-const require = createRequire(import.meta.url);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Import các plugin
-const pluginTs = require('@typescript-eslint/eslint-plugin');
-const tsParser = require('@typescript-eslint/parser');
-const pluginImport = require('eslint-plugin-import');
-const pluginPrettier = require('eslint-plugin-prettier');
-const pluginReact = require('eslint-plugin-react');
-const pluginReactHooks = require('eslint-plugin-react-hooks');
-const pluginUnusedImports = require('eslint-plugin-unused-imports');
+const pluginTs = require('@typescript-eslint/eslint-plugin')
+const tsParser = require('@typescript-eslint/parser')
+const pluginImport = require('eslint-plugin-import')
+const pluginPrettier = require('eslint-plugin-prettier')
+const pluginReact = require('eslint-plugin-react')
+const pluginReactHooks = require('eslint-plugin-react-hooks')
+const pluginUnusedImports = require('eslint-plugin-unused-imports')
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
   resolvePluginsRelativeTo: __dirname,
-});
+})
 
 /** @type {import("eslint").Linter.FlatConfig[]} */
 const config = [
   js.configs.recommended,
   {
-    ignores: ['./scripts/*'],
+    ignores: ['./scripts/*', 'src/components/ui/*'],
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -46,7 +46,7 @@ const config = [
     'plugin:@typescript-eslint/recommended',
     'next',
     'next/core-web-vitals',
-    'plugin:prettier/recommended'
+    'plugin:prettier/recommended',
   ),
 
   {
@@ -76,6 +76,6 @@ const config = [
       ],
     },
   },
-];
+]
 
-export default config;
+export default config
