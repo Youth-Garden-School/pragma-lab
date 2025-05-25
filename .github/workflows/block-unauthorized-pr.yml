@@ -1,0 +1,21 @@
+name: Block Unauthorized PR
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - main
+
+jobs:
+  check-author:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR author
+        run: |
+          echo "PR author is ${{ github.actor }}"
+          ALLOWED_USERS="${{ secrets.ALLOWED_USERS }}"
+
+          if [[ ! " $ALLOWED_USERS " =~ " ${{ github.actor }} " ]]; then
+            echo "❌ User not allowed to open PR to this branch!"
+            exit 1
+          fi
