@@ -19,7 +19,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "format": "prettier --write \"**/*.{ts, tsx,js,jsx,md,mdx,css,yaml,yml}\"",
+    "check": "prettier --check \"**/*.{ts, tsx,js,jsx,md,mdx,css,yaml,yml}\"",
+    "prepare": "[ -n \"$CI\" ] && echo 'Skipping husky in CI environment' || npx husky"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
