@@ -287,6 +287,38 @@ src/
    - Component testing với React Testing Library
    - Coverage tối thiểu 80%
 
+## Quy tắc chạy dự án
+
+1. **Khởi động dự án**
+   ```bash
+   # Cài đặt dependencies
+   pnpm install
+
+   # Chạy development server
+   pnpm dev
+   ```
+
+2. **Trước khi commit code**
+   ```bash
+   # Format code
+   pnpm format
+
+   # Kiểm tra lỗi
+   pnpm lint
+   ```
+
+3. **Trước khi push code**
+   ```bash
+   # Build dự án để kiểm tra lỗi
+   pnpm build
+   ```
+
+4. **Quy trình làm việc**
+   - Luôn chạy `pnpm dev` khi phát triển
+   - Format code trước khi commit
+   - Build project trước khi push
+   - Không push code có lỗi build
+
 ## Scripts có sẵn
 
 ```bash
