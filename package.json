@@ -30,6 +30,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "commitlint": "^19.8.1",
+    "inversify": "^7.5.1",
     "lucide-react": "^0.511.0",
     "next": "15.1.8",
     "react": "^19.1.0",
@@ -37,7 +38,9 @@
     "react-hook-form": "^7.56.4",
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
+    "reflect-metadata": "^0.2.2",
     "tailwind-merge": "^3.3.0",
+    "tailwindcss": "^4.1.7",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.25.28"
   },
