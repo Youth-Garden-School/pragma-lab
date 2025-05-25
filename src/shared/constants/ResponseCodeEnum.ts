@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-magic-numbers */
 export enum ResponseCodeEnum {
   /**
    * Official Documentation @ https://tools.ietf.org/html/rfc7231#section-6.2.1
