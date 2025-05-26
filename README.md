@@ -1,10 +1,23 @@
 # Tài liệu hướng dẫn dự án
 
+## Giới thiệu
+
+Pragma Lab là dự án FullStack được xây dựng trên nền tảng NextJS 14, áp dụng kiến trúc DDD (Domain-Driven Design). Dự án sử dụng:
+
+- **Frontend**: App Router của NextJS 14 với TailwindCSS và Radix UI
+- **Backend**: Pages Router của NextJS để xây dựng API endpoints
+- **Database**: PostgreSQL với Prisma ORM
+- **Architecture**: Domain Driven Design (DDD)
+- **State Management**: Redux Toolkit
+- **Dependency Injection**: InversifyJS
+- **Type Safety**: TypeScript
+- **Testing**: Jest và React Testing Library
+
 ## Quy tắc đặt tên branch
 
 Các loại branch được phép sử dụng:
 
-- `dev` - Branch chính cho development
+- `develop` - Branch chính cho development
 - `staging` - Branch cho môi trường staging
 - `release/vX.X` - Branch cho version release (VD: release/v1.0)
 - `feature/{initials}_{feature-name}` - Branch cho tính năng mới (VD: feature/sh_onboarding)
@@ -20,7 +33,7 @@ Các loại branch được phép sử dụng:
 <body>
 ```
 
-### Các loại type:
+### Các loại type: [hotkey]
 
 - `feat`: Thêm tính năng mới
 - `fix`: Sửa lỗi
@@ -391,12 +404,10 @@ pnpm build
 pnpm test
 
 # Kiểm tra linting
-pnpm lint
+pnpm lint-staged
 
 # Format code
 pnpm format
-
-pnpm lint-staged
 ```
 
 ## Quy trình review code
@@ -445,33 +456,51 @@ export interface IPasswordHasher {
 }
 ```
 
-## Ví dụ về React Query hook:
+## Ví dụ về API hooks:
 
 ```typescript
-// useLogin.ts
-import { useMutation } from '@tanstack/react-query'
-import type { LoginParams, AuthResult } from './types'
-import { authService } from '../services/implements/AuthService'
+// useAuth.ts
+import { useState, useCallback } from 'react'
+import { httpClient } from '@/configs/http-client/HttpClient'
+import type { LoginDTO, AuthResult } from '../types'
 
-export const useLogin = () => {
-  return useMutation<AuthResult, Error, LoginParams>({
-    mutationFn: (params) => authService.login(params),
-    onSuccess: (data) => {
-      // Handle successful login
-    },
-  })
-}
+export const useAuth = () => {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
 
-// useUser.ts
-import { useQuery } from '@tanstack/react-query'
-import type { User } from '../../domain/entities/User'
+  const login = useCallback(async (credentials: LoginDTO) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const result = await httpClient.post<AuthResult>('/auth/login', credentials)
+      return result
+    } catch (err) {
+      setError(err as Error)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-export const useUser = (userId: string) => {
-  return useQuery<User>({
-    queryKey: ['user', userId],
-    queryFn: () => authService.getUser(userId),
-    enabled: !!userId,
-  })
+  const getUser = useCallback(async (userId: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      return await httpClient.get(`/users/${userId}`)
+    } catch (err) {
+      setError(err as Error)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return {
+    login,
+    getUser,
+    loading,
+    error,
+  }
 }
 ```
 
