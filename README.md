@@ -372,7 +372,7 @@ DATABASE_URL=<your_database_url>
    pnpm format
 
    # Kiểm tra lỗi
-   pnpm lint
+   pnpm lint-staged
    ```
 
 3. **Trước khi push code**
