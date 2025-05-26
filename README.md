@@ -39,6 +39,13 @@ Các loại branch được phép sử dụng:
 
 ```
 src/
+├── app/                    # Next.js 14 App Router
+│   ├── (auth)/             # Auth routes group
+│   │   ├── login/
+│   │   └── register/
+│   ├── (dashboard)/        # Protected routes
+│   └── layout.tsx          # Root layout
+│
 ├── components/                    # Components dùng chung cho toàn bộ dự án
 │   ├── Button/
 │   │   ├── Button.tsx
@@ -138,6 +145,52 @@ src/
    - Không import trực tiếp giữa các module
    - Giao tiếp qua interfaces định nghĩa trong domain layer
    - Shared code đặt trong thư mục `shared`
+
+## Kiến trúc FullStack
+
+### Frontend (App Router)
+
+```
+src/
+├── app/                     # Next.js 14 App Router
+│   ├── (auth)/             # Auth routes group
+│   │   ├── login/
+│   │   └── register/
+│   ├── (dashboard)/        # Protected routes
+│   └── layout.tsx          # Root layout
+│
+├── components/             # Shared components
+└── features/              # Feature modules
+```
+
+### Backend (Pages Router)
+
+```
+src/
+├── pages/
+│   └── api/               # API Routes with Pages Router
+│       ├── auth/
+│       │   ├── login.ts
+│       │   └── register.ts
+│       └── [...trpc].ts   # tRPC API handler
+│
+```
+
+### Database Structure
+
+```
+prisma/
+├── schema.prisma          # Prisma schema
+└── migrations/            # Migration files
+```
+
+### Cấu hình môi trường
+
+```env
+NEXT_PUBLIC_API_BASE_URL=<your_api_base_url>
+
+DATABASE_URL=<your_database_url>
+```
 
 ## Các package chính được sử dụng
 
@@ -290,6 +343,7 @@ src/
 ## Quy tắc chạy dự án
 
 1. **Khởi động dự án**
+
    ```bash
    # Cài đặt dependencies
    pnpm install
@@ -299,6 +353,7 @@ src/
    ```
 
 2. **Trước khi commit code**
+
    ```bash
    # Format code
    pnpm format
@@ -308,6 +363,7 @@ src/
    ```
 
 3. **Trước khi push code**
+
    ```bash
    # Build dự án để kiểm tra lỗi
    pnpm build
