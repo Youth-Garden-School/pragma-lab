@@ -13,3 +13,197 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Users {
+  userId      Int       @id @default(autoincrement())
+  phone       String
+  dateOfBirth DateTime?
+  name        String
+  email       String
+  address     String?
+  password    String
+  role        Role      @default(customer)
+  tickets     Tickets[]
+  trips       Trips[]   @relation("Driver")
+  notifications Notifications[]
+
+  @@map("Users")
+}
+
+model VehicleTypes {
+  vehicleTypeId Int         @id @default(autoincrement())
+  name          String
+  seatCapacity  Int
+  pricePerSeat  Decimal
+  vehicles      Vehicles[]
+  seatConfigs   SeatConfigurations[]
+
+  @@map("Vehicle_Types")
+}
+
+model SeatConfigurations {
+  seatConfigId   Int         @id @default(autoincrement())
+  vehicleTypeId  Int
+  vehicleType    VehicleTypes @relation(fields: [vehicleTypeId], references: [vehicleTypeId])
+  seatNumber     String
+  rowNumber      Int
+  columnNumber   Int
+  isAvailable    Boolean     @default(true)
+  
+  @@unique([vehicleTypeId, seatNumber])
+  @@map("Seat_Configurations")
+}
+
+model Vehicles {
+  vehicleId     Int         @id @default(autoincrement())
+  licensePlate  String
+  vehicleTypeId Int
+  vehicleType   VehicleTypes @relation(fields: [vehicleTypeId], references: [vehicleTypeId])
+  trips         Trips[]
+
+  @@map("Vehicles")
+}
+
+model Locations {
+  locationId Int       @id @default(autoincrement())
+  detail     String
+  province   String
+  tripStops  TripStops[]
+
+  @@map("Locations")
+}
+
+model Trips {
+  tripId        Int         @id @default(autoincrement())
+  vehicleId     Int
+  vehicle       Vehicles    @relation(fields: [vehicleId], references: [vehicleId])
+  driverId      Int
+  driver        Users       @relation("Driver", fields: [driverId], references: [userId])
+  status        TripStatus  @default(upcoming)
+  note          String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  tripStops     TripStops[]
+  tickets       Tickets[]
+  tripSeats     TripSeats[]
+
+  @@map("Trips")
+}
+
+model TripStops {
+  tripStopId    Int       @id @default(autoincrement())
+  tripId        Int
+  trip          Trips     @relation(fields: [tripId], references: [tripId])
+  locationId    Int
+  location      Locations @relation(fields: [locationId], references: [locationId])
+  stopOrder     Int
+  arrivalTime   DateTime
+  departureTime DateTime
+  isPickup      Boolean
+  pickupTickets Tickets[] @relation("PickupStop")
+  dropoffTickets Tickets[] @relation("DropoffStop")
+
+  @@unique([tripId, stopOrder])
+  @@map("Trip_Stops")
+}
+
+model Tickets {
+  ticketId      Int         @id @default(autoincrement())
+  userId        Int
+  user          Users       @relation(fields: [userId], references: [userId])
+  tripId        Int
+  trip          Trips       @relation(fields: [tripId], references: [tripId])
+  pickupStopId  Int
+  pickupStop    TripStops   @relation("PickupStop", fields: [pickupStopId], references: [tripStopId])
+  dropoffStopId Int
+  dropoffStop   TripStops   @relation("DropoffStop", fields: [dropoffStopId], references: [tripStopId])
+  seatNumber    String
+  price         Decimal
+  status        TicketStatus @default(booked)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  payments      Payments[]
+  tripSeats     TripSeats[]
+  notifications Notifications[]
+
+  @@map("Tickets")
+}
+
+model Payments {
+  paymentId Int       @id @default(autoincrement())
+  ticketId  Int
+  ticket    Tickets   @relation(fields: [ticketId], references: [ticketId])
+  amount    Decimal
+  method    PaymentMethod
+  paidAt    DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("Payments")
+}
+
+model TripSeats {
+  tripId      Int       
+  seatNumber  String    
+  trip        Trips     @relation(fields: [tripId], references: [tripId])
+  isBooked    Boolean   @default(false)
+  ticketId    Int?
+  ticket      Tickets?  @relation(fields: [ticketId], references: [ticketId])
+
+  @@id([tripId, seatNumber])
+  @@map("Trip_Seats")
+}
+
+model Notifications {
+  notificationId Int       @id @default(autoincrement())
+  ticketId      Int
+  ticket        Tickets   @relation(fields: [ticketId], references: [ticketId])
+  userId        Int
+  user          Users     @relation(fields: [userId], references: [userId])
+  type          NotificationType
+  message       String
+  sentAt        DateTime
+  status        NotificationStatus @default(pending)
+  createdAt     DateTime  @default(now())
+
+  @@map("Notifications")
+}
+
+enum Role {
+  customer
+  admin
+  employee
+}
+
+enum TripStatus {
+  upcoming
+  ongoing
+  completed
+  cancelled
+  delayed
+}
+
+enum TicketStatus {
+  booked
+  cancelled
+  completed
+  refunded
+}
+
+enum PaymentMethod {
+  cash
+  card
+  momo
+  banking
+}
+
+enum NotificationType {
+  email
+  phone
+}
+
+enum NotificationStatus {
+  sent
+  failed
+  pending
+}
