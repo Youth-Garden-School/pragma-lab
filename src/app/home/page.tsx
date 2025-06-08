@@ -1,9 +1,9 @@
 import Footer from '@/components/Common/Layout/Footer'
 import Header from '@/components/Common/Layout/Header'
-import HeroSection from '@/components/Common/landingPage/HeroSection'
-import FeaturesSection from '@/components/Common/landingPage/FeaturesSection'
-import HowItWorksSection from '@/components/Common/landingPage/HowItWorksSection'
-import TestimonialsSection from '@/components/Common/landingPage/TestimonialsSection'
+import HeroSection from '@/feature/landingPage/HeroSection'
+import FeaturesSection from '@/feature/landingPage/FeaturesSection'
+import HowItWorksSection from '@/feature/landingPage/HowItWorksSection'
+import TestimonialsSection from '@/feature/landingPage/TestimonialsSection'
 
 export default function Home() {
   return (
