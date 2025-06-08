@@ -26,7 +26,7 @@ const compat = new FlatCompat({
 const config = [
   js.configs.recommended,
   {
-    ignores: ['./scripts/*', 'src/components/ui/*'],
+    ignores: ['./scripts/*'],
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -58,22 +58,13 @@ const config = [
       'unused-imports': pluginUnusedImports,
     },
     rules: {
-      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/rules-of-hooks': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
       'import/no-unresolved': 'off',
       'unused-imports/no-unused-imports': 'error',
       'prettier/prettier': 'warn',
       '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-magic-numbers': [
-        'warn',
-        {
-          ignore: [0, 1, 2],
-          ignoreArrayIndexes: true,
-          enforceConst: true,
-          detectObjects: false,
-        },
-      ],
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ]

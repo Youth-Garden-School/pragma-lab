@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { IHttpClient } from './IHttpClient'
 
 class HttpClient implements IHttpClient {
