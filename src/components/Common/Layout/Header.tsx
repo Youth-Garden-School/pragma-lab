@@ -9,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import Logocar from '@/components/Common/Icon/Logocar'
+
 const SCROLL_THRESHOLD = 80
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
@@ -25,8 +27,6 @@ export default function Header() {
   const menuItems = [
     { name: 'Tra Cứu', href: '/search' },
     { name: 'Tin tức', href: '/news' },
-    { name: 'Hóa Đơn', href: '/invoice' },
-    { name: 'Tuyển dụng', href: '/careers' },
     { name: 'Hỗ trợ', href: '/support' },
     { name: 'Về Chúng Tôi', href: '/about' },
   ]
@@ -148,25 +148,16 @@ export default function Header() {
           <div className="container mx-auto px-[120px]">
             <div className="flex justify-between items-center">
               {/* Logo */}
-              <Link href="/" className="flex items-center group">
+              <Link href="/home" className="flex items-center group">
                 <div
                   className={`transition-all duration-300 ${scrolled ? 'scale-90' : 'scale-100'}`}
                 >
-                  <div className="flex items-center">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-700 p-0.5 mr-3">
-                      <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                        <span className="text-blue-600 font-black text-lg">BM</span>
-                      </div>
-                    </div>
+                  <div className="flex items-center space-x-3">
+                    <Logocar width={48} height={48} />
                     <div>
-                      <h1 className="text-xl font-black">
-                        <span className="bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
-                          BUSMANAGER
-                        </span>
-                        <span className="text-slate-700">,LTD</span>
-                      </h1>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        Transportation Service
+                      <h1 className="text-xl font-bold text-blue-600">DATVEXE</h1>
+                      <p className="text-xs font-semibold text-gray-500">
+                        Đặt vé xe khách online
                       </p>
                     </div>
                   </div>
