@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Montserrat } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/Provider'
+import { ScrollbarWidthSetter } from '@/components/Common/Layout/ScrollbarWidthSetter'
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -21,7 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${montserrat.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <ScrollbarWidthSetter />
+          <div id="app">{children}</div>
+        </Providers>
       </body>
     </html>
   )

@@ -3,6 +3,20 @@
 @tailwind utilities;
 
 @layer base {
+  body,
+  html {
+    overflow: hidden;
+  }
+
+  * {
+    scrollbar-width: thin;
+  }
+
+  #app {
+    overflow-y: auto;
+    height: 100vh;
+  }
+
   :root {
     --background: 0 0% 100%;
 

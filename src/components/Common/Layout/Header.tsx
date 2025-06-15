@@ -10,18 +10,24 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import Logocar from '@/components/Common/Icon/Logocar'
+import { AuthModal } from '@/feature/Authentication/presentation/organisms/AuthModal'
 
 const SCROLL_THRESHOLD = 80
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
 
   useEffect(() => {
+    const app = document.getElementById('app')
+    if (!app) return
+
     const handleScroll = () => {
-      setScrolled(window.scrollY > SCROLL_THRESHOLD)
+      setScrolled(app.scrollTop > SCROLL_THRESHOLD)
     }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+
+    app.addEventListener('scroll', handleScroll, { passive: true })
+    return () => app.removeEventListener('scroll', handleScroll)
   }, [])
 
   const menuItems = [
@@ -72,14 +78,13 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50">
+      <header className="fixed top-0 left-0 z-50" style={{ right: 'var(--scrollbar-width, 0px)' }}>
         {/* Top Contact Bar */}
         <div
           className={`transition-all duration-500 ${scrolled ? 'h-0 opacity-0' : 'h-12 opacity-100'} overflow-hidden bg-white border-b border-gray-100`}
         >
-          <div className={`container mx-auto px-[120px] py-2`}>
+          <div className="container mx-auto px-[120px] py-2">
             <div className="flex justify-between items-center">
-              {/* Contact Info */}
               <div className="hidden md:flex items-center space-x-6 text-xs">
                 <div className="flex items-center space-x-1 text-gray-600">
                   <Phone className="w-3 h-3" />
@@ -94,8 +99,6 @@ export default function Header() {
                   <span>Hỗ trợ 24/7</span>
                 </div>
               </div>
-
-              {/* Language & Login */}
               <div className="flex items-center space-x-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -128,11 +131,11 @@ export default function Header() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-
                 <Button
                   size="sm"
                   variant="outline"
                   className="text-sm px-4 py-1.5 border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 text-gray-700"
+                  onClick={() => setAuthModalOpen(true)}
                 >
                   Đăng nhập
                 </Button>
@@ -140,14 +143,12 @@ export default function Header() {
             </div>
           </div>
         </div>
-
         {/* Main Header */}
         <div
           className={`transition-all duration-500 ${scrolled ? 'bg-white shadow-xl py-2' : 'bg-white shadow-lg py-4'}`}
         >
           <div className="container mx-auto px-[120px]">
             <div className="flex justify-between items-center">
-              {/* Logo */}
               <Link href="/home" className="flex items-center group">
                 <div
                   className={`transition-all duration-300 ${scrolled ? 'scale-90' : 'scale-100'}`}
@@ -156,15 +157,11 @@ export default function Header() {
                     <Logocar width={48} height={48} />
                     <div>
                       <h1 className="text-xl font-bold text-blue-600">DATVEXE</h1>
-                      <p className="text-xs font-semibold text-gray-500">
-                        Đặt vé xe khách online
-                      </p>
+                      <p className="text-xs font-semibold text-gray-500">Đặt vé xe khách online</p>
                     </div>
                   </div>
                 </div>
               </Link>
-
-              {/* Desktop Navigation */}
               <nav className="hidden lg:flex">
                 <ul className="flex items-center space-x-1">
                   {menuItems.map((item) => (
@@ -179,8 +176,6 @@ export default function Header() {
                   ))}
                 </ul>
               </nav>
-
-              {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="lg:hidden w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg transition-all duration-300"
@@ -190,7 +185,6 @@ export default function Header() {
             </div>
           </div>
         </div>
-
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="lg:hidden bg-white border-t shadow-xl">
@@ -209,7 +203,7 @@ export default function Header() {
                 ))}
               </ul>
               <div className="mt-4 pt-4 border-t space-y-2">
-                <DropdownMenu>
+                <DropdownMenu modal={true}>
                   <DropdownMenuTrigger asChild>
                     <button className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors bg-white">
                       <div className="flex items-center space-x-2">
@@ -231,7 +225,13 @@ export default function Header() {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button className="w-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300">
+                <Button
+                  className="w-full border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                  onClick={() => {
+                    setMobileMenuOpen(false)
+                    setAuthModalOpen(true)
+                  }}
+                >
                   Đăng nhập
                 </Button>
               </div>
@@ -239,13 +239,13 @@ export default function Header() {
           </div>
         )}
       </header>
-
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </>
   )
 }
