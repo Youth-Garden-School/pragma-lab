@@ -24,6 +24,7 @@ export default function RootLayout({
       <body className={`${montserrat.variable} font-sans antialiased`}>
         <Providers>
           <ScrollbarWidthSetter />
+
           <div id="app">{children}</div>
         </Providers>
       </body>

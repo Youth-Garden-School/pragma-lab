@@ -17,6 +17,10 @@
     height: 100vh;
   }
 
+  #app::-webkit-scrollbar {
+    width: var(--scrollbar-width) !important;
+  }
+
   :root {
     --background: 0 0% 100%;
 
@@ -67,6 +71,8 @@
     --chart-5: 27 87% 67%;
 
     --radius: 0.5rem;
+
+    --scrollbar-width: 10px;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -182,6 +188,27 @@
     }
     100% {
       transform: translateY(0);
+    }
+  }
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  @keyframes modal-out {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
     }
   }
 }

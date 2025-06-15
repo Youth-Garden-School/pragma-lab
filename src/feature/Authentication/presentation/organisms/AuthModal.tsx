@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { BaseModal, ModalBody, ModalHeader } from '@/components/Modal/BaseModal'
 import { LoginForm } from './LoginFormModal'
 import { SignupForm } from './SignupFormModal'
 
@@ -17,18 +17,31 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setMode(newMode)
   }
 
+  const modalTitle = mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{mode === 'login' ? 'Login' : 'Sign up'}</DialogTitle>
-        </DialogHeader>
-        {mode === 'login' ? (
-          <LoginForm onSuccess={onClose} onSignupClick={() => handleModeChange('signup')} />
-        ) : (
-          <SignupForm onSuccess={() => handleModeChange('login')} />
-        )}
-      </DialogContent>
-    </Dialog>
+    <BaseModal isOpen={isOpen} onClose={onClose} title={modalTitle}>
+      {mode === 'login' ? (
+        <>
+          <ModalHeader
+            title="Đăng nhập"
+            description="Nhập email của bạn để đăng nhập vào tài khoản"
+          />
+          <ModalBody>
+            <LoginForm onSuccess={onClose} onSignupClick={() => handleModeChange('signup')} />
+          </ModalBody>
+        </>
+      ) : (
+        <>
+          <ModalHeader
+            title="Tạo tài khoản"
+            description="Nhập email của bạn để tạo tài khoản mới"
+          />
+          <ModalBody>
+            <SignupForm onSuccess={() => handleModeChange('login')} />
+          </ModalBody>
+        </>
+      )}
+    </BaseModal>
   )
 }

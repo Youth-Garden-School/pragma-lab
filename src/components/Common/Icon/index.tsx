@@ -43,6 +43,9 @@ import {
   LucideIcon,
   LucideProps,
   LucideShoppingBag,
+  Mail,
+  MapPin,
+  Menu,
   Minus,
   Moon,
   MoreVertical,
@@ -104,6 +107,10 @@ export const Icons = {
   pizza: Pizza,
   sun: SunMedium,
   moon: Moon,
+  X: X,
+  mail: Mail,
+  mapPin: MapPin,
+  menu: Menu,
   laptop: Laptop,
   gitHub: ({ ...props }: LucideProps) => (
     <svg

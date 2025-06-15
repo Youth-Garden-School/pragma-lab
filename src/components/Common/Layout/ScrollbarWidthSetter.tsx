@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 
 export function ScrollbarWidthSetter() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const setScrollbarWidth = () => {
       const app = document.getElementById('app')
       if (!app) return
