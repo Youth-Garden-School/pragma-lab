@@ -1,7 +1,7 @@
 'use client'
 import { Button } from '@/components/ui/button'
 import { Phone, Mail, MapPin, Facebook, Youtube, Instagram } from 'lucide-react'
-import Logocar from '@/components/Common/Icon/Logocar'
+import { Icons } from '../Icon'
 
 const Footer = () => {
   return (
@@ -12,7 +12,7 @@ const Footer = () => {
           {/* Company Info */}
           <div>
             <div className="flex items-center space-x-3 mb-4">
-              <Logocar width={40} height={40} />
+              <Icons.logocar width={40} height={40} />
               <div>
                 <h3 className="text-xl font-bold text-blue-600">DATVEXE</h3>
                 <p className="text-sm text-gray-500">Đặt vé xe khách online</p>
