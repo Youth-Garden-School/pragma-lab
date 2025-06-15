@@ -3,6 +3,24 @@
 @tailwind utilities;
 
 @layer base {
+  body,
+  html {
+    overflow: hidden;
+  }
+
+  * {
+    scrollbar-width: thin;
+  }
+
+  #app {
+    overflow-y: auto;
+    height: 100vh;
+  }
+
+  #app::-webkit-scrollbar {
+    width: var(--scrollbar-width) !important;
+  }
+
   :root {
     --background: 0 0% 100%;
 
@@ -54,21 +72,8 @@
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    --scrollbar-width: 10px;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -200,6 +205,27 @@
     }
     100% {
       transform: translateY(0);
+    }
+  }
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  @keyframes modal-out {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
     }
   }
 }

@@ -1,7 +1,9 @@
+import { ScrollbarWidthSetter } from '@/components/Common/Layout/ScrollbarWidthSetter'
+import { Providers } from '@/components/Provider'
 import type { Metadata } from 'next'
 import { Montserrat } from 'next/font/google'
+import React from 'react'
 import './globals.css'
-import { Providers } from '@/components/Provider'
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -21,7 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${montserrat.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <ScrollbarWidthSetter />
+        <React.StrictMode>
+          <Providers>
+            <div id="app">{children}</div>
+          </Providers>
+        </React.StrictMode>
       </body>
     </html>
   )
