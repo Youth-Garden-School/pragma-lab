@@ -4,10 +4,9 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-}
-
-module.exports = {
   images: {
     domains: ['newsapi.toanthangcar.com'],
   },
-};
+}
+
+export default nextConfig
