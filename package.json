@@ -31,6 +31,7 @@
     "push": "dotenv -e .env.development.local -- npx prisma db push"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.1.1",
     "@prisma/client": "^6.8.2",
     "@prisma/extension-accelerate": "^2.0.0",
     "@radix-ui/react-accordion": "^1.2.11",
@@ -72,6 +73,7 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.56.4",
     "react-redux": "^9.2.0",
+    "recharts": "^2.15.3",
     "redux-persist": "^6.0.0",
     "reflect-metadata": "^0.2.2",
     "sonner": "^2.0.3",
