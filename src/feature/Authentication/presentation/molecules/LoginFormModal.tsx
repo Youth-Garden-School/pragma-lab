@@ -5,6 +5,9 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AUTH_MESSAGES } from '../../constants/validation'
+import { authService } from '../../services/authService'
+import { toast } from 'sonner'
+import { LoadingIndicator } from '@/components/Common/LoadingIndicator'
 import {
   Form,
   FormControl,
@@ -13,6 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { useState } from 'react'
 
 const loginSchema = z.object({
   email: z.string().min(1, AUTH_MESSAGES.EMAIL_REQUIRED).email(AUTH_MESSAGES.EMAIL_INVALID),
@@ -28,6 +32,7 @@ interface LoginFormProps extends React.ComponentProps<'div'> {
 }
 
 export function LoginForm({ className, onSuccess, onSignupClick, ...props }: LoginFormProps) {
+  const [isLoading, setIsLoading] = useState(false)
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -39,11 +44,19 @@ export function LoginForm({ className, onSuccess, onSignupClick, ...props }: Log
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      // TODO: Implement login logic
-      console.log('Login data:', data)
-      onSuccess?.()
+      setIsLoading(true)
+      const success = await authService.login(data.email, data.password, data.rememberMe ?? false)
+      if (success) {
+        toast.success('Đăng nhập thành công')
+        onSuccess?.()
+      } else {
+        toast.error('Email hoặc mật khẩu không đúng')
+      }
     } catch (error) {
       console.error('Login error:', error)
+      toast.error('Có lỗi xảy ra, vui lòng thử lại')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -58,7 +71,7 @@ export function LoginForm({ className, onSuccess, onSignupClick, ...props }: Log
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="example@email.com" {...field} />
+                  <Input placeholder="example@email.com" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -77,19 +90,44 @@ export function LoginForm({ className, onSuccess, onSignupClick, ...props }: Log
                     onClick={() => {
                       /* TODO: Implement forgot password */
                     }}
+                    disabled={isLoading}
                   >
                     Quên mật khẩu?
                   </button>
                 </div>
                 <FormControl>
-                  <Input type="password" {...field} />
+                  <Input type="password" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full">
-            Đăng nhập
+          <FormField
+            control={form.control}
+            name="rememberMe"
+            render={({ field }) => (
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <FormLabel className="text-sm font-normal">Ghi nhớ đăng nhập</FormLabel>
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <LoadingIndicator size="sm" />
+              </div>
+            ) : (
+              'Đăng nhập'
+            )}
           </Button>
         </form>
       </Form>
@@ -99,6 +137,7 @@ export function LoginForm({ className, onSuccess, onSignupClick, ...props }: Log
           type="button"
           className="underline underline-offset-4 hover:text-primary"
           onClick={onSignupClick}
+          disabled={isLoading}
         >
           Đăng ký
         </button>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { BaseModal, ModalBody, ModalHeader } from '@/components/Modal/BaseModal'
-import { LoginForm } from './LoginFormModal'
-import { SignupForm } from './SignupFormModal'
+import { LoginForm } from '../molecules/LoginFormModal'
+import { SignupForm } from '../molecules/SignupFormModal'
 
 interface AuthModalProps {
   isOpen: boolean

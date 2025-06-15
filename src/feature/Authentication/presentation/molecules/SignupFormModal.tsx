@@ -5,6 +5,9 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AUTH_CONSTANTS, AUTH_MESSAGES } from '../../constants/validation'
+import { authService } from '../../services/authService'
+import { toast } from 'sonner'
+import { LoadingIndicator } from '@/components/Common/LoadingIndicator'
 import {
   Form,
   FormControl,
@@ -13,6 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { useState } from 'react'
 
 const signupSchema = z
   .object({
@@ -36,6 +40,7 @@ interface SignupFormProps extends React.ComponentProps<'div'> {
 }
 
 export function SignupForm({ className, onSuccess, ...props }: SignupFormProps) {
+  const [isLoading, setIsLoading] = useState(false)
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -47,11 +52,19 @@ export function SignupForm({ className, onSuccess, ...props }: SignupFormProps) 
 
   const onSubmit = async (data: SignupFormValues) => {
     try {
-      // TODO: Implement signup logic
-      console.log('Signup data:', data)
-      onSuccess?.()
+      setIsLoading(true)
+      const success = await authService.signup(data.email, data.password)
+      if (success) {
+        toast.success('Đăng ký thành công')
+        onSuccess?.()
+      } else {
+        toast.error('Đăng ký thất bại')
+      }
     } catch (error) {
       console.error('Signup error:', error)
+      toast.error('Có lỗi xảy ra, vui lòng thử lại')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -66,7 +79,7 @@ export function SignupForm({ className, onSuccess, ...props }: SignupFormProps) 
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="example@email.com" {...field} />
+                  <Input placeholder="example@email.com" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -79,7 +92,7 @@ export function SignupForm({ className, onSuccess, ...props }: SignupFormProps) 
               <FormItem>
                 <FormLabel>Mật khẩu</FormLabel>
                 <FormControl>
-                  <Input type="password" {...field} />
+                  <Input type="password" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -92,14 +105,14 @@ export function SignupForm({ className, onSuccess, ...props }: SignupFormProps) 
               <FormItem>
                 <FormLabel>Xác nhận mật khẩu</FormLabel>
                 <FormControl>
-                  <Input type="password" {...field} />
+                  <Input type="password" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full">
-            Đăng ký
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? <LoadingIndicator size="sm" /> : 'Đăng ký'}
           </Button>
         </form>
       </Form>
@@ -109,6 +122,7 @@ export function SignupForm({ className, onSuccess, ...props }: SignupFormProps) 
           type="button"
           className="underline underline-offset-4 hover:text-primary"
           onClick={() => onSuccess?.()}
+          disabled={isLoading}
         >
           Đăng nhập
         </button>
