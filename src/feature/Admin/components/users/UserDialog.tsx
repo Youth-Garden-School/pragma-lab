@@ -13,6 +13,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useForm } from 'react-hook-form';
 import { cn } from '@/lib/utils';
 import { Role } from '@/feature/Admin/data/mockData';
+import { toast } from 'sonner';
 
 interface UserDialogProps {
   open: boolean;
@@ -57,8 +58,10 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
   const onSubmit = (data: any) => {
     if (user) {
       console.log('Updating user ID:', user.userId, 'with data:', data);
+      toast.success('User updated successfully');
     } else {
       console.log('Creating new user with data:', data);
+      toast.success('User created successfully');
     }
     onOpenChange(false);
   };

@@ -1,34 +1,34 @@
 'use client'
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { mockTickets, mockUsers, TicketStatus } from '@/feature/Admin/data/mockData';
-import { formatDistanceToNow } from 'date-fns';
+import React from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { mockTickets, mockUsers, TicketStatus } from '@/feature/Admin/data/mockData'
+import { formatDistanceToNow } from 'date-fns'
 
 export const RecentActivities = () => {
   const recentTickets = mockTickets
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+    .slice(0, 5)
 
   const getUserName = (userId: number) => {
-    const user = mockUsers.find(u => u.userId === userId);
-    return user?.name || 'Unknown User';
-  };
+    const user = mockUsers.find((u) => u.userId === userId)
+    return user?.name || 'Unknown User'
+  }
 
   const getStatusColor = (status: TicketStatus) => {
     switch (status) {
       case TicketStatus.booked:
-        return 'text-green-600';
+        return 'text-green-600'
       case TicketStatus.cancelled:
-        return 'text-red-600';
+        return 'text-red-600'
       case TicketStatus.completed:
-        return 'text-blue-600';
+        return 'text-blue-600'
       case TicketStatus.refunded:
-        return 'text-yellow-600';
+        return 'text-yellow-600'
       default:
-        return 'text-gray-600';
+        return 'text-gray-600'
     }
-  };
+  }
 
   return (
     <Card>
@@ -62,6 +62,5 @@ export const RecentActivities = () => {
         </ScrollArea>
       </CardContent>
     </Card>
-  );
-};
-
+  )
+}

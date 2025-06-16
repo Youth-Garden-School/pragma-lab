@@ -2,7 +2,7 @@
 import React from 'react';
 import { DashboardHeader } from '@/feature/Admin/components/dashboard/DashboardHeader';
 import { DashboardSidebar } from '@/feature/Admin/components/dashboard/DashboardSidebar';
-import { UsersList } from '@/feature/Admin/components/users/UsersList';
+import { VehicleManagement } from '@/feature/Admin/components/vehicles/VehicleManagement';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import {
   Breadcrumb,
@@ -13,11 +13,11 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 
-const Users = () => {
+const Vehicles = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
-        <DashboardSidebar activeItem="Users" />
+        <DashboardSidebar activeItem="Vehicles" />
         <div className="flex-1 flex flex-col">
           <DashboardHeader />
           <main className="flex-1 p-6 space-y-6">
@@ -28,19 +28,19 @@ const Users = () => {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Users</BreadcrumbPage>
+                  <BreadcrumbPage>Vehicles</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
             
             <div>
-              <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+              <h2 className="text-3xl font-bold tracking-tight">Vehicle Management</h2>
               <p className="text-muted-foreground">
-                Manage all users in your bus system
+                Manage vehicles, types and seat configurations
               </p>
             </div>
             
-            <UsersList />
+            <VehicleManagement />
           </main>
         </div>
       </div>
@@ -48,4 +48,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default Vehicles;

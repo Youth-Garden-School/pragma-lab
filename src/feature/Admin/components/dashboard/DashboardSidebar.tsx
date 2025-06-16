@@ -18,7 +18,7 @@ interface DashboardSidebarProps {
 }
 
 const navigationItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
   { icon: Users, label: 'Users', href: '/users' },
   { icon: Truck, label: 'Vehicles', href: '/vehicles' },
   { icon: MapPin, label: 'Locations', href: '/locations' },
