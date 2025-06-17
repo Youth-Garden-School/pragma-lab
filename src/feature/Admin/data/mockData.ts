@@ -37,8 +37,8 @@ export enum NotificationStatus {
   pending = 'pending',
 }
 
-// Data interfaces
-export interface User {
+// Data interfaces - Updated to match Prisma schema exactly
+export interface Users {
   userId: number
   phone: string
   dateOfBirth?: Date
@@ -48,22 +48,22 @@ export interface User {
   password: string
   role: Role
   // Relations (optional for fetching)
-  tickets?: Ticket[]
-  trips?: Trip[]
-  notifications?: Notification[]
+  tickets?: Tickets[]
+  trips?: Trips[]
+  notifications?: Notifications[]
 }
 
-export interface VehicleType {
+export interface VehicleTypes {
   vehicleTypeId: number
   name: string
   seatCapacity: number
-  pricePerSeat: number
+  pricePerSeat: number // Will be converted to Decimal in actual DB
   // Relations
-  vehicles?: Vehicle[]
-  seatConfigs?: SeatConfiguration[]
+  vehicles?: Vehicles[]
+  seatConfigs?: SeatConfigurations[]
 }
 
-export interface SeatConfiguration {
+export interface SeatConfigurations {
   seatConfigId: number
   vehicleTypeId: number
   seatNumber: string
@@ -71,27 +71,27 @@ export interface SeatConfiguration {
   columnNumber: number
   isAvailable: boolean
   // Relations
-  vehicleType?: VehicleType
+  vehicleType?: VehicleTypes
 }
 
-export interface Vehicle {
+export interface Vehicles {
   vehicleId: number
   licensePlate: string
   vehicleTypeId: number
   // Relations
-  vehicleType?: VehicleType
-  trips?: Trip[]
+  vehicleType?: VehicleTypes
+  trips?: Trips[]
 }
 
-export interface Location {
+export interface Locations {
   locationId: number
   detail: string
   province: string
   // Relations
-  tripStops?: TripStop[]
+  tripStops?: TripStops[]
 }
 
-export interface Trip {
+export interface Trips {
   tripId: number
   vehicleId: number
   driverId: number
@@ -100,14 +100,14 @@ export interface Trip {
   createdAt: Date
   updatedAt: Date
   // Relations
-  vehicle?: Vehicle
-  driver?: User
-  tripStops?: TripStop[]
-  tickets?: Ticket[]
-  tripSeats?: TripSeat[]
+  vehicle?: Vehicles
+  driver?: Users
+  tripStops?: TripStops[]
+  tickets?: Tickets[]
+  tripSeats?: TripSeats[]
 }
 
-export interface TripStop {
+export interface TripStops {
   tripStopId: number
   tripId: number
   locationId: number
@@ -116,56 +116,56 @@ export interface TripStop {
   departureTime: Date
   isPickup: boolean
   // Relations
-  trip?: Trip
-  location?: Location
-  pickupTickets?: Ticket[]
-  dropoffTickets?: Ticket[]
+  trip?: Trips
+  location?: Locations
+  pickupTickets?: Tickets[]
+  dropoffTickets?: Tickets[]
 }
 
-export interface Ticket {
+export interface Tickets {
   ticketId: number
   userId: number
   tripId: number
   pickupStopId: number
   dropoffStopId: number
   seatNumber: string
-  price: number
+  price: number // Will be converted to Decimal in actual DB
   status: TicketStatus
   createdAt: Date
   updatedAt: Date
   // Relations
-  user?: User
-  trip?: Trip
-  pickupStop?: TripStop
-  dropoffStop?: TripStop
-  payments?: Payment[]
-  tripSeats?: TripSeat[]
-  notifications?: Notification[]
+  user?: Users
+  trip?: Trips
+  pickupStop?: TripStops
+  dropoffStop?: TripStops
+  payments?: Payments[]
+  tripSeats?: TripSeats[]
+  notifications?: Notifications[]
 }
 
-export interface Payment {
+export interface Payments {
   paymentId: number
   ticketId: number
-  amount: number
+  amount: number // Will be converted to Decimal in actual DB
   method: PaymentMethod
   paidAt: Date
   createdAt: Date
   updatedAt: Date
   // Relations
-  ticket?: Ticket
+  ticket?: Tickets
 }
 
-export interface TripSeat {
+export interface TripSeats {
   tripId: number
   seatNumber: string
   isBooked: boolean
   ticketId?: number
   // Relations
-  trip?: Trip
-  ticket?: Ticket
+  trip?: Trips
+  ticket?: Tickets
 }
 
-export interface Notification {
+export interface Notifications {
   notificationId: number
   ticketId: number
   userId: number
@@ -175,12 +175,12 @@ export interface Notification {
   status: NotificationStatus
   createdAt: Date
   // Relations
-  ticket?: Ticket
-  user?: User
+  ticket?: Tickets
+  user?: Users
 }
 
-// Complete Mock Data
-export const mockUsers: User[] = [
+// Complete Mock Data - Updated with correct interface names
+export const mockUsers: Users[] = [
   {
     userId: 1,
     phone: '0123456789',
@@ -233,7 +233,7 @@ export const mockUsers: User[] = [
   },
 ]
 
-export const mockVehicleTypes: VehicleType[] = [
+export const mockVehicleTypes: VehicleTypes[] = [
   {
     vehicleTypeId: 1,
     name: 'Xe Limousine 22 chỗ',
@@ -254,7 +254,7 @@ export const mockVehicleTypes: VehicleType[] = [
   },
 ]
 
-export const mockSeatConfigurations: SeatConfiguration[] = [
+export const mockSeatConfigurations: SeatConfigurations[] = [
   // Limousine 22 chỗ (2 tầng, mỗi tầng 11 chỗ, 1 hàng 3 ghế)
   ...Array.from({ length: 22 }, (_, i) => ({
     seatConfigId: i + 1,
@@ -286,7 +286,7 @@ export const mockSeatConfigurations: SeatConfiguration[] = [
   })),
 ]
 
-export const mockVehicles: Vehicle[] = [
+export const mockVehicles: Vehicles[] = [
   { vehicleId: 1, licensePlate: '29A-12345', vehicleTypeId: 1 },
   { vehicleId: 2, licensePlate: '30B-67890', vehicleTypeId: 2 },
   { vehicleId: 3, licensePlate: '51C-11111', vehicleTypeId: 3 },
@@ -294,7 +294,7 @@ export const mockVehicles: Vehicle[] = [
   { vehicleId: 5, licensePlate: '43E-33333', vehicleTypeId: 2 },
 ]
 
-export const mockLocations: Location[] = [
+export const mockLocations: Locations[] = [
   { locationId: 1, detail: 'Bến xe Mỹ Đình', province: 'Hà Nội' },
   { locationId: 2, detail: 'Bến xe Miền Đông', province: 'TP.HCM' },
   { locationId: 3, detail: 'Bến xe Đà Nẵng', province: 'Đà Nẵng' },
@@ -304,7 +304,7 @@ export const mockLocations: Location[] = [
   { locationId: 7, detail: 'Bến xe Huế', province: 'Thừa Thiên Huế' },
 ]
 
-export const mockTrips: Trip[] = [
+export const mockTrips: Trips[] = [
   {
     tripId: 1,
     vehicleId: 1,
@@ -352,7 +352,7 @@ export const mockTrips: Trip[] = [
   },
 ]
 
-export const mockTripStops: TripStop[] = [
+export const mockTripStops: TripStops[] = [
   // Trip 1: Hà Nội -> TP.HCM
   {
     tripStopId: 1,
@@ -443,7 +443,7 @@ export const mockTripStops: TripStop[] = [
   },
 ]
 
-export const mockTickets: Ticket[] = [
+export const mockTickets: Tickets[] = [
   {
     ticketId: 1,
     userId: 3,
@@ -506,7 +506,7 @@ export const mockTickets: Ticket[] = [
   },
 ]
 
-export const mockPayments: Payment[] = [
+export const mockPayments: Payments[] = [
   {
     paymentId: 1,
     ticketId: 1,
@@ -545,7 +545,7 @@ export const mockPayments: Payment[] = [
   },
 ]
 
-export const mockTripSeats: TripSeat[] = [
+export const mockTripSeats: TripSeats[] = [
   // Trip 1 - Limousine 22 chỗ
   ...Array.from({ length: 22 }, (_, i) => ({
     tripId: 1,
@@ -579,7 +579,7 @@ export const mockTripSeats: TripSeat[] = [
   })),
 ]
 
-export const mockNotifications: Notification[] = [
+export const mockNotifications: Notifications[] = [
   {
     notificationId: 1,
     ticketId: 1,
