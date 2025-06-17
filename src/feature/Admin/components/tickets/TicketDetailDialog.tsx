@@ -52,7 +52,7 @@ const TicketDetailDialog = ({ ticket, open, onOpenChange }: TicketDetailDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ticket Details #{ticket.ticketId}</DialogTitle>
         </DialogHeader>
@@ -134,7 +134,7 @@ const TicketDetailDialog = ({ ticket, open, onOpenChange }: TicketDetailDialogPr
               </Card>
             </div>
 
-            {/* QR Code Placeholder */}
+            {/* QR Code Placeholder
             <Card>
               <CardHeader>
                 <CardTitle>Ticket QR Code</CardTitle>
@@ -147,7 +147,7 @@ const TicketDetailDialog = ({ ticket, open, onOpenChange }: TicketDetailDialogPr
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Action Buttons */}
             <div className="flex gap-2 justify-end">

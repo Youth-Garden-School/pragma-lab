@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react'
-import { Search, MapPin, Download, Upload, Edit, Trash2, MoreVertical } from 'lucide-react'
+import { Search, MapPin, Download, Upload, Edit, Trash2, MoreHorizontal } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -200,7 +200,7 @@ export const LocationsList = () => {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

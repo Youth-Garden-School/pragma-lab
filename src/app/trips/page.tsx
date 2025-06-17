@@ -75,32 +75,34 @@ const Trips = () => {
                 <CardTitle className="text-lg">Filters & Search</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                  {/* Search */}
-                  <div className="relative w-full max-w-md">
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Search - chiếm phần lớn không gian */}
+                  <div className="relative flex-1">
                     <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
                     <Input
                       placeholder="Search trips, routes, drivers..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
+                      className="pl-9 w-full"
                     />
                   </div>
 
-                  {/* Status Filter */}
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value={TripStatus.upcoming}>Upcoming</SelectItem>
-                      <SelectItem value={TripStatus.ongoing}>Ongoing</SelectItem>
-                      <SelectItem value={TripStatus.completed}>Completed</SelectItem>
-                      <SelectItem value={TripStatus.cancelled}>Cancelled</SelectItem>
-                      <SelectItem value={TripStatus.delayed}>Delayed</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {/* Status Filter - chiếm không gian cố định */}
+                  <div className="md:w-48">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value={TripStatus.upcoming}>Upcoming</SelectItem>
+                        <SelectItem value={TripStatus.ongoing}>Ongoing</SelectItem>
+                        <SelectItem value={TripStatus.completed}>Completed</SelectItem>
+                        <SelectItem value={TripStatus.cancelled}>Cancelled</SelectItem>
+                        <SelectItem value={TripStatus.delayed}>Delayed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>
