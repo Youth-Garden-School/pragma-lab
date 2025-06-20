@@ -19,16 +19,23 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
-import { mockVehicleTypes } from '@/feature/Admin/data/mockData'
 import { toast } from 'sonner'
 
 interface VehicleDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   vehicle?: any
+  vehicleTypes?: any[]
+  onSuccess?: () => void
 }
 
-export const VehicleDialog = ({ open, onOpenChange, vehicle }: VehicleDialogProps) => {
+export const VehicleDialog = ({
+  open,
+  onOpenChange,
+  vehicle,
+  vehicleTypes = [],
+  onSuccess,
+}: VehicleDialogProps) => {
   const form = useForm({
     defaultValues: vehicle || {
       licensePlate: '',
@@ -40,7 +47,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle }: VehicleDialogProp
     if (vehicle) {
       form.reset({
         licensePlate: vehicle.licensePlate,
-        vehicleTypeId: vehicle.vehicleTypeId.toString(),
+        vehicleTypeId: vehicle.vehicleTypeId?.toString() || '',
       })
     } else {
       form.reset({
@@ -50,15 +57,42 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle }: VehicleDialogProp
     }
   }, [vehicle, form])
 
-  const onSubmit = (data: any) => {
-    if (vehicle) {
-      console.log('Updating vehicle ID:', vehicle.vehicleId, 'with data:', data)
-      toast.success('Vehicle updated successfully')
-    } else {
-      console.log('Creating new vehicle with data:', data)
-      toast.success('Vehicle created successfully')
+  const onSubmit = async (data: any) => {
+    try {
+      if (vehicle) {
+        // Update
+        const res = await fetch(`/api/vehicles/${vehicle.vehicleId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        })
+        const result = await res.json()
+        if (result.success) {
+          toast.success('Vehicle updated successfully')
+          onOpenChange(false)
+          onSuccess && onSuccess()
+        } else {
+          toast.error(result.error || 'Update failed')
+        }
+      } else {
+        // Create
+        const res = await fetch('/api/vehicles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        })
+        const result = await res.json()
+        if (result.success) {
+          toast.success('Vehicle created successfully')
+          onOpenChange(false)
+          onSuccess && onSuccess()
+        } else {
+          toast.error(result.error || 'Create failed')
+        }
+      }
+    } catch (e) {
+      toast.error('Request failed')
     }
-    onOpenChange(false)
   }
 
   return (
@@ -96,7 +130,7 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle }: VehicleDialogProp
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {mockVehicleTypes.map((type) => (
+                      {vehicleTypes.map((type) => (
                         <SelectItem key={type.vehicleTypeId} value={type.vehicleTypeId.toString()}>
                           {type.name}
                         </SelectItem>

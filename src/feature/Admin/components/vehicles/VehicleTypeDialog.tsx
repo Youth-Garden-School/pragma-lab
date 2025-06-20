@@ -1,26 +1,39 @@
 'use client'
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
+import React from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
 interface VehicleTypeDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  vehicleType?: any;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  vehicleType?: any
+  onSuccess?: () => void
 }
 
-export const VehicleTypeDialog = ({ open, onOpenChange, vehicleType }: VehicleTypeDialogProps) => {
+export const VehicleTypeDialog = ({
+  open,
+  onOpenChange,
+  vehicleType,
+  onSuccess,
+}: VehicleTypeDialogProps) => {
   const form = useForm({
     defaultValues: vehicleType || {
       name: '',
       seatCapacity: '',
       pricePerSeat: '',
-    }
-  });
+    },
+  })
 
   React.useEffect(() => {
     if (vehicleType) {
@@ -28,32 +41,58 @@ export const VehicleTypeDialog = ({ open, onOpenChange, vehicleType }: VehicleTy
         name: vehicleType.name,
         seatCapacity: vehicleType.seatCapacity.toString(),
         pricePerSeat: vehicleType.pricePerSeat.toString(),
-      });
+      })
     } else {
       form.reset({
         name: '',
         seatCapacity: '',
         pricePerSeat: '',
-      });
+      })
     }
-  }, [vehicleType, form]);
+  }, [vehicleType, form])
 
-  const onSubmit = (data: any) => {
+  const onSubmit = async (data: any) => {
     const formattedData = {
       ...data,
       seatCapacity: parseInt(data.seatCapacity),
       pricePerSeat: parseInt(data.pricePerSeat),
-    };
-
-    if (vehicleType) {
-      console.log('Updating vehicle type ID:', vehicleType.vehicleTypeId, 'with data:', formattedData);
-      toast.success('Vehicle type updated successfully');
-    } else {
-      console.log('Creating new vehicle type with data:', formattedData);
-      toast.success('Vehicle type created successfully');
     }
-    onOpenChange(false);
-  };
+    try {
+      if (vehicleType) {
+        // Update
+        const res = await fetch(`/api/vehicletypes/${vehicleType.vehicleTypeId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formattedData),
+        })
+        const result = await res.json()
+        if (result.success) {
+          toast.success('Vehicle type updated successfully')
+          onOpenChange(false)
+          onSuccess && onSuccess()
+        } else {
+          toast.error(result.error || 'Update failed')
+        }
+      } else {
+        // Create
+        const res = await fetch('/api/vehicletypes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formattedData),
+        })
+        const result = await res.json()
+        if (result.success) {
+          toast.success('Vehicle type created successfully')
+          onOpenChange(false)
+          onSuccess && onSuccess()
+        } else {
+          toast.error(result.error || 'Create failed')
+        }
+      }
+    } catch (e) {
+      toast.error('Request failed')
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -76,7 +115,7 @@ export const VehicleTypeDialog = ({ open, onOpenChange, vehicleType }: VehicleTy
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="seatCapacity"
@@ -90,7 +129,7 @@ export const VehicleTypeDialog = ({ open, onOpenChange, vehicleType }: VehicleTy
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="pricePerSeat"
@@ -104,19 +143,17 @@ export const VehicleTypeDialog = ({ open, onOpenChange, vehicleType }: VehicleTy
                 </FormItem>
               )}
             />
-            
+
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {vehicleType ? 'Update' : 'Create'} Vehicle Type
-              </Button>
+              <Button type="submit">{vehicleType ? 'Update' : 'Create'} Vehicle Type</Button>
             </div>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
-  );
-};
-export default VehicleTypeDialog;
+  )
+}
+export default VehicleTypeDialog
