@@ -1,61 +1,81 @@
-'use client'
-import React, { useState } from 'react'
-import { Search, MapPin, Download, Upload, Edit, Trash2, MoreHorizontal } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+"use client"
+import React, { useState } from "react"
+import { Search, MapPin, Download, Upload, Edit, Trash2, MoreHorizontal } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Checkbox } from '@/components/ui/checkbox'
-import { LocationDialog } from './LocationDialog'
-import { mockLocations } from '@/feature/Admin/data/mockData'
-import { toast } from 'sonner'
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import { LocationDialog } from "./LocationDialog"
+import { toast } from "sonner"
 
 const vietnameseProvinces = [
-  'All Provinces',
-  'Hà Nội',
-  'TP.HCM',
-  'Đà Nẵng',
-  'Hải Phòng',
-  'Cần Thơ',
-  'Khánh Hòa',
-  'Thừa Thiên Huế',
-  'An Giang',
-  'Bà Rịa - Vũng Tàu',
+  "All Provinces",
+  "Hà Nội",
+  "TP.HCM",
+  "Đà Nẵng",
+  "Hải Phòng",
+  "Cần Thơ",
+  "Khánh Hòa",
+  "Thừa Thiên Huế",
+  "An Giang",
+  "Bà Rịa - Vũng Tàu",
 ]
 
 export const LocationsList = () => {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedProvince, setSelectedProvince] = useState('All Provinces')
+  const [locations, setLocations] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedProvince, setSelectedProvince] = useState("All Provinces")
   const [selectedLocations, setSelectedLocations] = useState<number[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingLocation, setEditingLocation] = useState<(typeof mockLocations)[0] | null>(null)
+  const [editingLocation, setEditingLocation] = useState<any | null>(null)
 
-  const filteredLocations = mockLocations.filter((location) => {
-    const matchesSearch = location.detail.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesProvince =
-      selectedProvince === 'All Provinces' || location.province === selectedProvince
-    return matchesSearch && matchesProvince
-  })
+  // State cho bulk delete confirmation
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+
+  // Fetch locations from API
+  const fetchLocations = async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (searchTerm) params.append("search", searchTerm)
+      if (selectedProvince && selectedProvince !== "All Provinces") params.append("province", selectedProvince)
+      params.append("limit", "100")
+
+      const res = await fetch(`/api/locations?${params.toString()}`)
+      const result = await res.json()
+      if (res.ok && result.success) {
+        setLocations(result.data || [])
+      } else {
+        toast.error(result.error || "Failed to fetch locations")
+      }
+    } catch {
+      toast.error("Network error!")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  React.useEffect(() => {
+    fetchLocations()
+    // eslint-disable-next-line
+  }, [searchTerm, selectedProvince])
+
+  const filteredLocations = locations
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -73,7 +93,7 @@ export const LocationsList = () => {
     }
   }
 
-  const handleEdit = (location: (typeof mockLocations)[0]) => {
+  const handleEdit = (location: any) => {
     setEditingLocation(location)
     setIsDialogOpen(true)
   }
@@ -83,26 +103,76 @@ export const LocationsList = () => {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = (locationId: number) => {
-    console.log('Delete location:', locationId)
-    toast.success('Location deleted successfully')
+  // Xóa đơn lẻ - sử dụng LocationDialog
+  const handleDelete = (location: any) => {
+    setEditingLocation(location)
+    setIsDialogOpen(true)
   }
 
+  // Bulk delete với Alert Dialog riêng
   const handleBulkDelete = () => {
-    console.log('Bulk delete locations:', selectedLocations)
-    toast.success(`${selectedLocations.length} locations deleted successfully`)
-    setSelectedLocations([])
+    setShowBulkDeleteConfirm(true)
+  }
+
+  const confirmBulkDelete = async () => {
+    setBulkDeleting(true)
+    let successCount = 0
+    let failCount = 0
+
+    for (const id of selectedLocations) {
+      try {
+        const res = await fetch(`/api/locations/${id}`, { method: "DELETE" })
+        const result = await res.json()
+        if (res.ok && result.success) {
+          successCount++
+        } else {
+          failCount++
+        }
+      } catch {
+        failCount++
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`${successCount} location(s) deleted successfully`)
+      // Refresh danh sách
+      await fetchLocations()
+      setSelectedLocations([])
+    }
+
+    if (failCount > 0) {
+      toast.error(`Failed to delete ${failCount} location(s)`)
+    }
+
+    setBulkDeleting(false)
+    setShowBulkDeleteConfirm(false)
   }
 
   const handleExport = () => {
-    console.log('Export locations')
-    toast.success('Locations exported successfully')
+    toast.info("Export feature not implemented")
   }
 
   const handleImport = () => {
-    console.log('Import locations')
-    toast.success('Locations imported successfully')
+    toast.info("Import feature not implemented")
   }
+
+  // Callback khi LocationDialog thành công
+  const handleDialogSuccess = (locationData: any, type: "create" | "update" | "delete") => {
+    if (type === "create") {
+      setLocations((prev) => [locationData, ...prev])
+    } else if (type === "update") {
+      setLocations((prev) => prev.map((l) => (l.locationId === locationData.locationId ? locationData : l)))
+    } else if (type === "delete") {
+      // Sử dụng locationId để xóa khỏi danh sách
+      const locationId = locationData.locationId
+      setLocations((prev) => prev.filter((l) => l.locationId !== locationId))
+      setSelectedLocations((prev) => prev.filter((id) => id !== locationId))
+    }
+  }
+
+  const selectedLocationNames = selectedLocations
+    .map((id) => locations.find((loc) => loc.locationId === id)?.detail)
+    .filter(Boolean)
 
   return (
     <>
@@ -155,12 +225,10 @@ export const LocationsList = () => {
 
           {selectedLocations.length > 0 && (
             <div className="flex items-center justify-between bg-muted p-4 rounded-lg mb-4">
-              <span className="text-sm text-muted-foreground">
-                {selectedLocations.length} location(s) selected
-              </span>
-              <Button onClick={handleBulkDelete} variant="destructive" size="sm">
+              <span className="text-sm text-muted-foreground">{selectedLocations.length} location(s) selected</span>
+              <Button onClick={handleBulkDelete} variant="destructive" size="sm" disabled={bulkDeleting}>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete Selected
+                {bulkDeleting ? "Deleting..." : "Delete Selected"}
               </Button>
             </div>
           )}
@@ -171,10 +239,7 @@ export const LocationsList = () => {
                 <TableRow>
                   <TableHead className="w-12">
                     <Checkbox
-                      checked={
-                        selectedLocations.length === filteredLocations.length &&
-                        filteredLocations.length > 0
-                      }
+                      checked={selectedLocations.length === filteredLocations.length && filteredLocations.length > 0}
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
@@ -184,65 +249,111 @@ export const LocationsList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLocations.map((location) => (
-                  <TableRow key={location.locationId}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedLocations.includes(location.locationId)}
-                        onCheckedChange={(checked) =>
-                          handleSelectLocation(location.locationId, checked as boolean)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{location.detail}</TableCell>
-                    <TableCell>{location.province}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(location)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(location.locationId)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-8">
+                      Loading locations...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredLocations.map((location) => (
+                    <TableRow key={location.locationId}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedLocations.includes(location.locationId)}
+                          onCheckedChange={(checked) => handleSelectLocation(location.locationId, checked as boolean)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{location.detail}</TableCell>
+                      <TableCell>{location.province}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(location)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(location)} className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
 
-          {filteredLocations.length === 0 && (
+          {filteredLocations.length === 0 && !loading && (
             <div className="text-center py-8">
               <MapPin className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-semibold text-gray-900">No locations found</h3>
               <p className="mt-1 text-sm text-gray-500">
-                {searchTerm || selectedProvince !== 'All Provinces'
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'Get started by adding a new location.'}
+                {searchTerm || selectedProvince !== "All Provinces"
+                  ? "Try adjusting your search or filter criteria."
+                  : "Get started by adding a new location."}
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* LocationDialog cho Create/Edit/Delete đơn lẻ */}
       <LocationDialog
         open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open)
+          if (!open) setEditingLocation(null)
+        }}
         location={editingLocation}
+        onSuccess={handleDialogSuccess}
       />
+
+      {/* Alert Dialog cho Bulk Delete */}
+      <AlertDialog open={showBulkDeleteConfirm} onOpenChange={setShowBulkDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Bulk Delete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedLocations.length} selected location(s)?
+              {selectedLocationNames.length > 0 && (
+                <div className="mt-2">
+                  <strong>Locations to be deleted:</strong>
+                  <ul className="mt-1 text-sm list-disc list-inside">
+                    {selectedLocationNames.slice(0, 5).map((name, index) => (
+                      <li key={index}>{name}</li>
+                    ))}
+                    {selectedLocationNames.length > 5 && <li>... and {selectedLocationNames.length - 5} more</li>}
+                  </ul>
+                </div>
+              )}
+              <p className="mt-2 text-destructive">
+                This action cannot be undone and will permanently remove these locations from the system.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBulkDelete}
+              disabled={bulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkDeleting ? "Deleting..." : `Delete ${selectedLocations.length} Location(s)`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
+
+export default LocationsList
