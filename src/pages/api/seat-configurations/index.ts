@@ -45,6 +45,12 @@ async function getSeatConfigurations(req: NextApiRequest, res: NextApiResponse) 
     const where: any = {}
     if (vehicleTypeId) where.vehicleTypeId = parseInt(vehicleTypeId as string)
 
+    console.log('Querying seat configurations with params:', { pageNum, limitNum, skip, where })
+
+    // Test database connection first
+    const totalCount = await prisma.seatConfigurations.count()
+    console.log('Total seat configurations in database:', totalCount)
+
     const [seatConfigs, total] = await Promise.all([
       prisma.seatConfigurations.findMany({
         where,
@@ -65,6 +71,8 @@ async function getSeatConfigurations(req: NextApiRequest, res: NextApiResponse) 
       prisma.seatConfigurations.count({ where }),
     ])
 
+    console.log(`Found ${seatConfigs.length} seat configs out of ${total} total`)
+
     const totalPages = Math.ceil(total / limitNum)
 
     return res.status(200).json(
@@ -83,15 +91,14 @@ async function getSeatConfigurations(req: NextApiRequest, res: NextApiResponse) 
     )
   } catch (error) {
     console.error('Get seat configurations error:', error)
-    return res
-      .status(500)
-      .json(
-        new ApiResponseBuilder()
-          .setStatusCode(500)
-          .setCode('INTERNAL_SERVER_ERROR')
-          .setMessage('Failed to retrieve seat configurations')
-          .build(),
-      )
+    return res.status(500).json(
+      new ApiResponseBuilder()
+        .setStatusCode(500)
+        .setCode('INTERNAL_SERVER_ERROR')
+        .setMessage('Failed to retrieve seat configurations')
+        .setData({ error: error instanceof Error ? error.message : 'Unknown error' })
+        .build(),
+    )
   }
 }
 

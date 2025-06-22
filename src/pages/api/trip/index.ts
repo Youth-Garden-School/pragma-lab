@@ -47,6 +47,12 @@ async function getTrips(req: NextApiRequest, res: NextApiResponse) {
     if (status) where.status = status
     if (vehicleId) where.vehicleId = parseInt(vehicleId as string)
 
+    console.log('Querying trips with params:', { pageNum, limitNum, skip, where })
+
+    // Test database connection first
+    const totalCount = await prisma.trips.count()
+    console.log('Total trips in database:', totalCount)
+
     const [trips, total] = await Promise.all([
       prisma.trips.findMany({
         where,
@@ -91,6 +97,8 @@ async function getTrips(req: NextApiRequest, res: NextApiResponse) {
       prisma.trips.count({ where }),
     ])
 
+    console.log(`Found ${trips.length} trips out of ${total} total`)
+
     const totalPages = Math.ceil(total / limitNum)
 
     return res.status(200).json(
@@ -109,15 +117,14 @@ async function getTrips(req: NextApiRequest, res: NextApiResponse) {
     )
   } catch (error) {
     console.error('Get trips error:', error)
-    return res
-      .status(500)
-      .json(
-        new ApiResponseBuilder()
-          .setStatusCode(500)
-          .setCode('INTERNAL_SERVER_ERROR')
-          .setMessage('Failed to retrieve trips')
-          .build(),
-      )
+    return res.status(500).json(
+      new ApiResponseBuilder()
+        .setStatusCode(500)
+        .setCode('INTERNAL_SERVER_ERROR')
+        .setMessage('Failed to retrieve trips')
+        .setData({ error: error instanceof Error ? error.message : 'Unknown error' })
+        .build(),
+    )
   }
 }
 

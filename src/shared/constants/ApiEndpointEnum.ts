@@ -5,6 +5,7 @@ export enum ApiEndpointEnum {
 
   // Trip Management
   TRIPS = '/trip',
+  TRIP_BY_ID = '/trip/[id]',
 
   // Seat Configuration Management
   SEAT_CONFIGURATIONS = '/seat-configurations',
@@ -20,4 +21,8 @@ export enum ApiEndpointEnum {
 
   // Locations
   LOCATIONS = '/locations',
+
+  // Tickets Management
+  TICKETS = '/tickets',
+  TICKET_BY_ID = '/tickets/[id]',
 }

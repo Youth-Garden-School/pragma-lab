@@ -1,46 +1,23 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { ApiResponseBuilder } from '@/shared/utils/ApiResponseBuilder'
 import prisma from '@/configs/prisma/prisma'
+import { ApiResponseBuilder } from '@/shared/utils/ApiResponseBuilder'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    switch (req.method) {
-      case 'POST':
-        return await bulkCreateSeatConfigurations(req, res)
-      case 'PUT':
-        return await bulkUpdateSeatConfigurations(req, res)
-      case 'DELETE':
-        return await bulkDeleteSeatConfigurations(req, res)
-      default:
-        return res
-          .status(405)
-          .json(
-            new ApiResponseBuilder()
-              .setStatusCode(405)
-              .setCode('METHOD_NOT_ALLOWED')
-              .setMessage('Method not allowed')
-              .build(),
-          )
-    }
-  } catch (error) {
-    console.error('Bulk Seat Configuration API Error:', error)
+  if (req.method !== 'POST') {
     return res
-      .status(500)
+      .status(405)
       .json(
         new ApiResponseBuilder()
-          .setStatusCode(500)
-          .setCode('INTERNAL_SERVER_ERROR')
-          .setMessage('Internal server error')
+          .setStatusCode(405)
+          .setCode('METHOD_NOT_ALLOWED')
+          .setMessage('Method not allowed')
           .build(),
       )
   }
-}
-
-async function bulkCreateSeatConfigurations(req: NextApiRequest, res: NextApiResponse) {
-  const { vehicleTypeId, seatConfigurations } = req.body
 
   try {
-    // Validate required fields
+    const { vehicleTypeId, seatConfigurations } = req.body
+
     if (!vehicleTypeId || !seatConfigurations || !Array.isArray(seatConfigurations)) {
       return res
         .status(400)
@@ -48,12 +25,12 @@ async function bulkCreateSeatConfigurations(req: NextApiRequest, res: NextApiRes
           new ApiResponseBuilder()
             .setStatusCode(400)
             .setCode('BAD_REQUEST')
-            .setMessage('Missing required fields: vehicleTypeId, seatConfigurations')
+            .setMessage('Invalid request data')
             .build(),
         )
     }
 
-    // Validate vehicle type exists
+    // Check if vehicle type exists
     const vehicleType = await prisma.vehicleTypes.findUnique({
       where: { vehicleTypeId: parseInt(vehicleTypeId) },
     })
@@ -70,103 +47,45 @@ async function bulkCreateSeatConfigurations(req: NextApiRequest, res: NextApiRes
         )
     }
 
-    // Validate seat configurations
-    const validatedConfigs = seatConfigurations.map((config: any, index: number) => {
-      if (
-        !config.seatNumber ||
-        config.rowNumber === undefined ||
-        config.columnNumber === undefined
-      ) {
-        throw new Error(`Invalid seat configuration at index ${index}`)
-      }
-      return {
-        vehicleTypeId: parseInt(vehicleTypeId),
-        seatNumber: config.seatNumber.toString(),
-        rowNumber: parseInt(config.rowNumber),
-        columnNumber: parseInt(config.columnNumber),
-        isAvailable: config.isAvailable !== undefined ? Boolean(config.isAvailable) : true,
-      }
+    // Delete existing seat configurations for this vehicle type
+    await prisma.seatConfigurations.deleteMany({
+      where: { vehicleTypeId: parseInt(vehicleTypeId) },
     })
 
-    // Check for duplicate seat numbers
-    const seatNumbers = validatedConfigs.map((config) => config.seatNumber)
-    const duplicateSeatNumbers = seatNumbers.filter(
-      (seatNumber, index) => seatNumbers.indexOf(seatNumber) !== index,
-    )
-
-    if (duplicateSeatNumbers.length > 0) {
-      return res.status(400).json(
-        new ApiResponseBuilder()
-          .setStatusCode(400)
-          .setCode('BAD_REQUEST')
-          .setMessage(`Duplicate seat numbers found: ${duplicateSeatNumbers.join(', ')}`)
-          .build(),
-      )
-    }
-
-    // Check if any seat numbers already exist for this vehicle type
-    const existingSeats = await prisma.seatConfigurations.findMany({
-      where: {
-        vehicleTypeId: parseInt(vehicleTypeId),
-        seatNumber: { in: seatNumbers },
-      },
-    })
-
-    if (existingSeats.length > 0) {
-      const existingSeatNumbers = existingSeats.map((seat) => seat.seatNumber)
-      return res.status(409).json(
-        new ApiResponseBuilder()
-          .setStatusCode(409)
-          .setCode('CONFLICT')
-          .setMessage(`Seat numbers already exist: ${existingSeatNumbers.join(', ')}`)
-          .build(),
-      )
-    }
-
-    // Create seat configurations
+    // Create new seat configurations
     const createdSeatConfigs = await prisma.seatConfigurations.createMany({
-      data: validatedConfigs,
-    })
-
-    // Fetch created seat configurations
-    const seatConfigs = await prisma.seatConfigurations.findMany({
-      where: {
+      data: seatConfigurations.map((config: any) => ({
         vehicleTypeId: parseInt(vehicleTypeId),
-        seatNumber: { in: seatNumbers },
-      },
-      include: {
-        vehicleType: {
-          select: {
-            vehicleTypeId: true,
-            name: true,
-            seatCapacity: true,
-            pricePerSeat: true,
-          },
-        },
-      },
-      orderBy: [{ rowNumber: 'asc' }, { columnNumber: 'asc' }],
+        seatNumber: config.seatNumber,
+        rowNumber: config.rowNumber,
+        columnNumber: config.columnNumber,
+        isAvailable: config.isAvailable,
+      })),
     })
 
-    return res.status(201).json(
-      new ApiResponseBuilder()
-        .setStatusCode(201)
-        .setCode('SUCCESS')
-        .setMessage('Seat configurations created successfully')
-        .setData({
-          created: createdSeatConfigs.count,
-          seatConfigurations: seatConfigs,
-        })
-        .build(),
+    console.log(
+      `Created ${createdSeatConfigs.count} seat configurations for vehicle type ${vehicleTypeId}`,
     )
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponseBuilder()
+          .setStatusCode(200)
+          .setCode('SUCCESS')
+          .setMessage('Seat configurations created successfully')
+          .setData({ count: createdSeatConfigs.count })
+          .build(),
+      )
   } catch (error) {
-    console.error('Bulk create seat configurations error:', error)
+    console.error('Error creating seat configurations:', error)
     return res
       .status(500)
       .json(
         new ApiResponseBuilder()
           .setStatusCode(500)
           .setCode('INTERNAL_SERVER_ERROR')
-          .setMessage('Failed to create seat configurations')
+          .setMessage('Internal server error')
           .build(),
       )
   }
