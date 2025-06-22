@@ -1,52 +1,26 @@
 "use client"
 
-import Footer from "@/components/Common/Layout/Footer"
 import Header from "@/components/Common/Layout/Header"
+import Footer from "@/components/Common/Layout/Footer"
+import SearchForm from "./components/SearchForm"
+import FilterSidebar from "./components/FilterSidebar"
+import DateCarousel from "./components/DateCarousel"
+import SortOptions from "./components/SortOptions"
+import TripCard from "./components/TripCard/TripCard"
 
-import { useState, useRef, useEffect } from "react"
-import { format, addDays, isSameDay, startOfDay } from "date-fns"
+import { mockTrips } from "./mockTrips"
+import { stopPoints } from "./mockdata"
+import { useState } from "react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Calendar } from "@/components/ui/calendar"
-import { Calendar as CalendarIcon, X, Minus, Plus } from "lucide-react"
 
-import { mockTrips, Trip } from "./mockTrips"
-
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
-
-import {
-    filterOptions,
-    stopPoints,
-    StopPoint
-} from "./data"
-
-export default function Search() {
-    const [showPickupPopover, setShowPickupPopover] = useState(false)
-    const [pickupQuery, setPickupQuery] = useState("")
-    const [expandedPickup, setExpandedPickup] = useState<string | null>(null)
-
-    const [showDropoffPopover, setShowDropoffPopover] = useState(false)
-    const [dropoffQuery, setDropoffQuery] = useState("")
-    const [expandedDropoff, setExpandedDropoff] = useState<string | null>(null)
-
-    const pickupRef = useRef<HTMLDivElement | null>(null)
-    const dropoffRef = useRef<HTMLDivElement | null>(null)
-
-    const [fromLocation, setFromLocation] = useState("")
-    const [toLocation, setToLocation] = useState("")
-    const [departureDate, setDepartureDate] = useState<Date>(new Date())
+export default function SearchPage() {
+    const [departureDate, setDepartureDate] = useState(new Date())
     const [adultCount, setAdultCount] = useState(1)
     const [childCount, setChildCount] = useState(0)
-    const [showTicketPopover, setShowTicketPopover] = useState(false)
-    const [activeDateIndex, setActiveDateIndex] = useState<number | null>(null)
+    const totalTickets = adultCount + childCount
 
-    const [pickupFilterPoints, setPickupFilterPoints] = useState<StopPoint[]>([])
-    const [dropoffFilterPoints, setDropoffFilterPoints] = useState<StopPoint[]>([])
+    const [pickupPointId, setPickupPointId] = useState("")
+    const [dropoffPointId, setDropoffPointId] = useState("")
 
     const [selectedDepartureTimes, setSelectedDepartureTimes] = useState<string[]>([])
     const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([])
@@ -54,85 +28,15 @@ export default function Search() {
     const [selectedPickupPoints, setSelectedPickupPoints] = useState<string[]>([])
     const [selectedDropoffPoints, setSelectedDropoffPoints] = useState<string[]>([])
 
-    const totalTickets = adultCount + childCount
-    const weekDays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"]
-
-    const [filteredTrips, setFilteredTrips] = useState<Trip[]>([])
-    const [hasSearched, setHasSearched] = useState(false)
-
-    const dateOptions = Array.from({ length: 5 }, (_, i) => addDays(departureDate, i))
+    const [expandedTripId, setExpandedTripId] = useState<string | null>(null)
 
     const handleSearch = () => {
-        const pickupPoint = stopPoints.find(sp => sp.name === pickupQuery)
-        const dropoffPoint = stopPoints.find(sp => sp.name === dropoffQuery)
-
-        if (!pickupPoint || !dropoffPoint) {
-            setPickupFilterPoints([])
-            setDropoffFilterPoints([])
-            setFilteredTrips([])
-            setHasSearched(true)
-            return
-        }
-
-        if (pickupPoint.location === dropoffPoint.location) {
-            setPickupFilterPoints([])
-            setDropoffFilterPoints([])
-            setFilteredTrips([])
-            setHasSearched(true)
-            return
-        }
-
-        setPickupFilterPoints([pickupPoint])
-        setDropoffFilterPoints([dropoffPoint])
-
-        // Kiểm tra ngày
-        const isToday = isSameDay(startOfDay(departureDate), startOfDay(new Date()))
-
-        const result = mockTrips.filter(trip =>
-            trip.pickupLocation === pickupPoint.location &&
-            trip.dropoffLocation === dropoffPoint.location &&
-            trip.availableSeats >= totalTickets &&
-            !isToday
-        )
-
-        setFilteredTrips(result)
-
-        // Gán index ngày để UI highlight
-        const index = dateOptions.findIndex(date =>
-            isSameDay(startOfDay(date), startOfDay(departureDate))
-        )
-        setActiveDateIndex(index >= 0 ? index : null)
-
-        setHasSearched(true)
+        console.log("Pickup:", pickupPointId)
+        console.log("Dropoff:", dropoffPointId)
+        console.log("Ngày đi:", departureDate)
+        console.log("Số vé:", totalTickets)
     }
-
-    const [expandedTripId, setExpandedTripId] = useState<string | null>(null)
-    const [selectedSeats, setSelectedSeats] = useState<string[]>([])
-    const [step, setStep] = useState<1 | 2 | 3>(1)
-
-    const [buyerInfo, setBuyerInfo] = useState({
-        fullName: "",
-        phone: "",
-        email: "",
-        note: "",
-        wantInvoice: false,
-    })
-
-    const handleToggleSeat = (seatId: string) => {
-        setSelectedSeats((prev) =>
-            prev.includes(seatId) ? prev.filter((id) => id !== seatId) : [...prev, seatId]
-        )
-    }
-
-    const clearAllFilters = () => {
-        setSelectedDepartureTimes([])
-        setSelectedVehicleTypes([])
-        setSelectedSeatPositions([])
-        setSelectedPickupPoints([])
-        setSelectedDropoffPoints([])
-    }
-
-    const toggleSelection = (item: string, list: string[], setList: (val: string[]) => void) => {
+    const onToggle = (item: string, list: string[], setList: (val: string[]) => void) => {
         if (list.includes(item)) {
             setList(list.filter(i => i !== item))
         } else {
@@ -140,509 +44,96 @@ export default function Search() {
         }
     }
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (pickupRef.current && !pickupRef.current.contains(event.target as Node)) {
-                setShowPickupPopover(false)
-            }
-            if (dropoffRef.current && !dropoffRef.current.contains(event.target as Node)) {
-                setShowDropoffPopover(false)
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside)
-        return () => document.removeEventListener("mousedown", handleClickOutside)
-    }, [])
+    const clearAll = () => {
+        setSelectedDepartureTimes([])
+        setSelectedVehicleTypes([])
+        setSelectedSeatPositions([])
+        setSelectedPickupPoints([])
+        setSelectedDropoffPoints([])
+    }
+
+    const dateOptions = Array.from({ length: 5 }, (_, i) => {
+        const date = new Date()
+        date.setDate(date.getDate() + i)
+        return date
+    })
+
+    const [activeDateIndex, setActiveDateIndex] = useState<number | null>(() => {
+        return dateOptions.findIndex(d => d.toDateString() === departureDate.toDateString())
+    })
+
+    const sortOptions = ["Giờ đi sớm nhất", "Giờ đi muộn nhất", "Giá tăng dần", "Giá giảm dần" ]
+    const [activeSort, setActiveSort] = useState<string | null>(null)
+
 
     return (
         <main className="min-h-screen pt-[120px]">
             <Header />
-
             {/* Search Form */}
             <div className="pt-[60px] pb-[60px] max-w-6xl mx-auto space-y-8">
-                <div className="glass-card p-6 rounded-2xl border border-blue-500 shadow-md">
-                    <div className="flex flex-wrap gap-4">
-                    {/* Điểm đón */}
-                    <div className="flex-1 min-w-[200px] relative" ref={pickupRef}>
-                    <p className="text-sm font-medium mb-2">Điểm đón</p>
-                    <Input
-                        placeholder="Tìm điểm đón..."
-                        value={pickupQuery}
-                        onFocus={() => setShowPickupPopover(true)}
-                        onChange={(e) => setPickupQuery(e.target.value)}
-                        className="h-11 border-2"
-                    />
-                    {showPickupPopover && (
-                        <div className="absolute z-50 mt-1 bg-white shadow-lg border rounded-xl max-h-64 overflow-y-auto w-full" >
-                        <div className="w-full text-left px-2 py-2 font-semibold">
-                            <p>Tỉnh - Thành phố</p>
-                        </div>
-                        {Array.from(new Set(stopPoints.map(p => p.location)))
-                            .filter(loc =>
-                            loc.toLowerCase().includes(pickupQuery.toLowerCase()) ||
-                            stopPoints.some(sp =>
-                                sp.location === loc && sp.name.toLowerCase().includes(pickupQuery.toLowerCase())
-                            )
-                            )
-                            .map(location => (
-                            <div key={location} className="border-b last:border-b-0">
-                                <button
-                                className="w-full text-left px-2 py-2 hover:bg-blue-50"
-                                onClick={() =>
-                                    setExpandedPickup(prev => (prev === location ? null : location))
-                                }
-                                >
-                                {location}
-                                </button>
-                                {expandedPickup === location && (
-                                <div className="pl-4 py-1 space-y-1">
-                                    {stopPoints
-                                    .filter(sp =>
-                                        sp.location === location &&
-                                        sp.name.toLowerCase().includes(pickupQuery.toLowerCase())
-                                    )
-                                    .map(sp => (
-                                        <div
-                                        key={sp.id}
-                                        className="cursor-pointer px-2 py-1 hover:bg-blue-100 rounded"
-                                        onClick={() => {
-                                            setFromLocation(sp.location)
-                                            setPickupQuery(sp.name)
-                                            setExpandedPickup(null)
-                                            setShowPickupPopover(false)
-                                        }}
-                                        >
-                                        {sp.name}
-                                        </div>
-                                    ))}
-                                </div>
-                                )}
-                            </div>
-                            ))}
-                        </div>
-                    )}
-                    </div>
-                    {/* Điểm đến */}
-                    <div className="flex-1 min-w-[200px] relative" ref={dropoffRef}>
-                    <p className="text-sm font-medium mb-2">Điểm đến</p>
-                    <Input
-                        placeholder="Tìm điểm đến..."
-                        value={dropoffQuery}
-                        onFocus={() => setShowDropoffPopover(true)}
-                        onChange={(e) => setDropoffQuery(e.target.value)}
-                        className="h-11 border-2"
-                    />
-                    {showDropoffPopover && (
-                        <div className="absolute z-50 mt-1 bg-white shadow-lg border rounded-xl max-h-64 overflow-y-auto w-full" >
-                        <div className="w-full text-left px-3 py-2 font-semibold">
-                            <p>Tỉnh - Thành phố</p>
-                        </div>
-                        {Array.from(new Set(stopPoints.map(p => p.location)))
-                            .filter(loc =>
-                            loc.toLowerCase().includes(dropoffQuery.toLowerCase()) ||
-                            stopPoints.some(sp =>
-                                sp.location === loc && sp.name.toLowerCase().includes(dropoffQuery.toLowerCase())
-                            )
-                            )
-                            .map(location => (
-                            <div key={location} className="border-b last:border-b-0">
-                                <button
-                                className="w-full text-left px-3 py-2 hover:bg-purple-50"
-                                onClick={() =>
-                                    setExpandedDropoff(prev => (prev === location ? null : location))
-                                }
-                                >
-                                {location}
-                                </button>
-                                {expandedDropoff === location && (
-                                <div className="pl-4 py-1 space-y-1">
-                                    {stopPoints
-                                    .filter(sp =>
-                                        sp.location === location &&
-                                        sp.name.toLowerCase().includes(dropoffQuery.toLowerCase())
-                                    )
-                                    .map(sp => (
-                                        <div
-                                        key={sp.id}
-                                        className="cursor-pointer px-2 py-1 hover:bg-purple-100 rounded"
-                                        onClick={() => {
-                                            setToLocation(sp.location)
-                                            setDropoffQuery(sp.name)
-                                            setExpandedDropoff(null)
-                                            setShowDropoffPopover(false)
-                                        }}
-                                        >
-                                        {sp.name}
-                                        </div>
-                                    ))}
-                                </div>
-                                )}
-                            </div>
-                            ))}
-                        </div>
-                    )}
-                    </div>
-                    {/* Ngày đi */}
-                    <div className="flex-1 min-w-[200px]">
-                        <p className="text-sm font-medium mb-2">Ngày giờ đi</p>
-                        <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full h-11 text-left">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {format(departureDate, "dd-MM-yyyy")}
-                            <X className="ml-auto h-4 w-4" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-white">
-                            <Calendar
-                            mode="single"
-                            selected={departureDate}
-                            onSelect={(date) => date && setDepartureDate(date)}
-                            disabled={(date) => date < new Date()}
-                            />
-                        </PopoverContent>
-                        </Popover>
-                    </div>
-
-                    {/* Số vé */}
-                    <div className="flex-1 min-w-[150px]">
-                        <p className="text-sm font-medium mb-2">Số vé</p>
-                        <Popover open={showTicketPopover} onOpenChange={setShowTicketPopover}>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full h-11 justify-between">
-                            <span>{totalTickets} vé</span>
-                            <X className="h-4 w-4" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 p-4 bg-white">
-                            {/* Người lớn */}
-                            <div className="mb-4">
-                            <p className="font-medium">Người lớn</p>
-                            <div className="flex gap-3 items-center mt-1">
-                                <Button size="icon" onClick={() => setAdultCount(Math.max(1, adultCount - 1))}><Minus /></Button>
-                                <span>{adultCount}</span>
-                                <Button size="icon" onClick={() => setAdultCount(adultCount + 1)}><Plus /></Button>
-                            </div>
-                            </div>
-                            {/* Trẻ em */}
-                            <div>
-                            <p className="font-medium">Em bé</p>
-                            <div className="flex gap-3 items-center mt-1">
-                                <Button size="icon" onClick={() => setChildCount(Math.max(0, childCount - 1))}><Minus /></Button>
-                                <span>{childCount}</span>
-                                <Button size="icon" onClick={() => setChildCount(childCount + 1)}><Plus /></Button>
-                            </div>
-                            </div>
-                            <Button className="mt-4 w-full" onClick={() => setShowTicketPopover(false)}>Xong</Button>
-                        </PopoverContent>
-                        </Popover>
-                    </div>
-
-                    {/* Tìm vé */}
-                    <div className="flex-1 min-w-[120px]">
-                        <p className="text-sm font-medium mb-2">Tìm chuyến</p>
-                        <Button onClick={handleSearch} className="w-full h-11 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                        Tìm vé
-                        </Button>
-                    </div>
-                    </div>
-                </div>
+                <SearchForm
+                    stopPoints={stopPoints}
+                    departureDate={departureDate}
+                    setDepartureDate={setDepartureDate}
+                    adultCount={adultCount}
+                    setAdultCount={setAdultCount}
+                    childCount={childCount}
+                    setChildCount={setChildCount}
+                    totalTickets={totalTickets}
+                    handleSearch={handleSearch}
+                    setPickupPointId={setPickupPointId}
+                    setDropoffPointId={setDropoffPointId}
+                />
             </div>
-            
             {/* Kết quả và bộ lọc */}
             <div className="flex max-w-6xl mx-auto gap-6 pb-10">
                 {/* Sidebar lọc */}
-                <aside className="w-64 bg-white border rounded-xl p-4 space-y-6">
-                    <div className="w-full flex bg-gray-100 rounded overflow-hidden">
-                        <div className="bg-gray-100 px-4 py-2 flex-1">
-                            <h2 className="text-lg font-semibold">Lọc</h2>
-                        </div>
-                        {(selectedDepartureTimes.length > 0 || selectedVehicleTypes.length > 0 || selectedSeatPositions.length > 0 || selectedPickupPoints.length > 0 || selectedDropoffPoints.length > 0) && (
-                            <button onClick={clearAllFilters} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-300 transition">Xóa lọc</button>
-                        )}
-                    </div>
-
-                    <div className="w-full">
-                    <p className="font-medium mb-1">Giờ đi</p>
-                    <div className="grid grid-cols-2 gap-2">
-                        {filterOptions.departureTimes.map((opt, i) => (
-                        <Button
-                            key={i}
-                            variant={selectedDepartureTimes.includes(opt) ? "default" : "outline"}
-                            className={selectedDepartureTimes.includes(opt) ? "bg-cyan-400 text-white hover:bg-cyan-400" : "bg-gray-100 hover:bg-gray-200"}
-                            onClick={() => toggleSelection(opt, selectedDepartureTimes, setSelectedDepartureTimes)}
-                        >
-                            {opt}
-                        </Button>
-                        ))}
-                    </div>
-                    </div>
-
-                    <div className="w-full">
-                    <p className="font-medium mb-1">Loại xe</p>
-                    {filterOptions.vehicleTypes.map((opt, i) => (
-                        <label key={i} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={selectedVehicleTypes.includes(opt)}
-                            onChange={() => toggleSelection(opt, selectedVehicleTypes, setSelectedVehicleTypes)}
-                        />
-                        {opt}
-                        </label>
-                    ))}
-                    </div>
-
-                    <div className="w-full">
-                    <p className="font-medium mb-1">Vị trí ghế</p>
-                    {filterOptions.seatPositions.map((opt, i) => (
-                        <label key={i} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={selectedSeatPositions.includes(opt)}
-                            onChange={() => toggleSelection(opt, selectedSeatPositions, setSelectedSeatPositions)}
-                        />
-                        {opt}
-                        </label>
-                    ))}
-                    </div>
-
-                    <div className="w-full">
-                    <p className="font-medium mb-1">Điểm đón</p>
-                    {pickupFilterPoints.map((p) => (
-                        <label key={p.id} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={selectedPickupPoints.includes(p.name)}
-                            onChange={() => toggleSelection(p.name, selectedPickupPoints, setSelectedPickupPoints)}
-                        />
-                        {p.name}
-                        </label>
-                    ))}
-                    </div>
-
-                    <div className="w-full">
-                    <p className="font-medium mb-1">Điểm trả</p>
-                    {dropoffFilterPoints.map((p) => (
-                        <label key={p.id} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            checked={selectedDropoffPoints.includes(p.name)}
-                            onChange={() => toggleSelection(p.name, selectedDropoffPoints, setSelectedDropoffPoints)}
-                        />
-                        {p.name}
-                        </label>
-                    ))}
-                    </div>
-                </aside>
-
+                <FilterSidebar
+                    selectedDepartureTimes={selectedDepartureTimes}
+                    selectedVehicleTypes={selectedVehicleTypes}
+                    selectedSeatPositions={selectedSeatPositions}
+                    selectedPickupPoints={selectedPickupPoints}
+                    selectedDropoffPoints={selectedDropoffPoints}
+                    pickupFilterPoints={stopPoints.filter(p => p.id === pickupPointId || p.location === stopPoints.find(s => s.id === pickupPointId)?.location)}
+                    dropoffFilterPoints={stopPoints.filter(p => p.id === dropoffPointId || p.location === stopPoints.find(s => s.id === dropoffPointId)?.location)}
+                    onToggle={onToggle}
+                    clearAll={clearAll}
+                    setSelectedDepartureTimes={setSelectedDepartureTimes}
+                    setSelectedVehicleTypes={setSelectedVehicleTypes}
+                    setSelectedSeatPositions={setSelectedSeatPositions}
+                    setSelectedPickupPoints={setSelectedPickupPoints}
+                    setSelectedDropoffPoints={setSelectedDropoffPoints}
+                />
 
                 {/* Danh sách chuyến xe */}
                 <div className="flex-1 space-y-4">
+                    <div className="text-cyan-400 font-bold text-xl text-center mt-2 mb-4">Dịch vụ xe liên tỉnh DATVEXE</div>
                     {/* Dải ngày */}
-                    <div className="flex gap-2 overflow-x-auto">
-                        {dateOptions.map((date, i) => (
-                            <Button
-                                key={i}
-                                variant={i === activeDateIndex ? "default" : "outline"}
-                                onClick={() => {
-                                    setDepartureDate(date)
-                                    setActiveDateIndex(i)
-                                }}
-                            >
-                                {weekDays[date.getDay()]} {format(date, "dd-MM-yyyy")}
-                            </Button>
-                        ))}
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline"><CalendarIcon className="w-4 h-4" /></Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 bg-white">
-                                <Calendar
-                                    mode="single"
-                                    selected={departureDate}
-                                    onSelect={(date) => date && setDepartureDate(date)}
-                                    disabled={(date) => date < new Date()}
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-
+                    <DateCarousel
+                        dateOptions={dateOptions}
+                        departureDate={departureDate}
+                        setDepartureDate={setDepartureDate}
+                        activeDateIndex={activeDateIndex}
+                        setActiveDateIndex={setActiveDateIndex}
+                    />
                     {/* Sắp xếp */}
-                    <div className="flex flex-wrap gap-2">
-                        {["Giờ đi sớm nhất", "Giờ đi muộn nhất", "Giá tăng dần", "Giá giảm dần"].map((label, i) => (
-                            <Button key={i} variant="outline" className="rounded-full">{label}</Button>
-                        ))}
-                    </div>
+                    <SortOptions
+                        sortOptions={sortOptions}
+                        activeSort={activeSort}
+                        setActiveSort={setActiveSort}
+                    />
 
                     {/* Danh sách chuyến */}
-                    {hasSearched && filteredTrips.length === 0 && (
-                        <p className="text-gray-600 italic">Không có chuyến xe phù hợp.</p>
-                    )}
-
-                    {filteredTrips.map((trip) => (
-                        <div key={trip.id} className="bg-white border rounded-xl p-4 space-y-2">
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <p className="font-semibold">{trip.vehicleType}</p>
-                                    <p className="text-gray-600">{trip.departureTime} → {trip.arrivalTime}</p>
-                                    <p className="text-sm">{trip.pickupLocation} → {trip.dropoffLocation}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-sm">Còn {trip.availableSeats} chỗ trống</p>
-                                    <p className="font-bold text-lg text-blue-600">Từ {trip.price.toLocaleString()}đ</p>
-                                    <Button
-                                        onClick={() => {
-                                            if (expandedTripId === trip.id) {
-                                                setExpandedTripId(null)
-                                                setSelectedSeats([])
-                                                setStep(1)
-                                                setBuyerInfo({
-                                                    fullName: "",
-                                                    phone: "",
-                                                    email: "",
-                                                    note: "",
-                                                    wantInvoice: false,
-                                                })
-                                            } else {
-                                                setExpandedTripId(trip.id)
-                                                setSelectedSeats([])
-                                                setStep(1)
-                                                setBuyerInfo({
-                                                    fullName: "",
-                                                    phone: "",
-                                                    email: "",
-                                                    note: "",
-                                                    wantInvoice: false,
-                                                })
-                                            }
-                                        }}
-                                    >
-                                        {expandedTripId === trip.id ? "Thu gọn" : "Chọn chuyến"}
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* Giao diện đặt vé đa bước */}
-                            {expandedTripId === trip.id && (
-                                <div className="border-t pt-4 space-y-4">
-                                    {/* Tiến trình */}
-                                    <div className="flex justify-between mb-4 font-medium text-gray-600">
-                                        <span className={step === 1 ? "text-blue-600" : ""}>1. Chỗ mong muốn</span>
-                                        <span className={step === 2 ? "text-blue-600" : ""}>2. Điểm đón trả</span>
-                                        <span className={step === 3 ? "text-blue-600" : ""}>3. Nhập thông tin</span>
-                                    </div>
-
-                                    {/* Step 1: Ghế */}
-                                    {step === 1 && (
-                                        <>
-                                            <div className="flex gap-4 mb-2 text-sm">
-                                                <div className="flex items-center gap-1"><div className="w-4 h-4 border bg-white" /> Còn trống</div>
-                                                <div className="flex items-center gap-1"><div className="w-4 h-4 bg-gray-400" /> Ghế không bán</div>
-                                                <div className="flex items-center gap-1"><div className="w-4 h-4 bg-green-500" /> Đang chọn</div>
-                                            </div>
-                                            <div className="grid grid-cols-5 gap-2 max-w-xs">
-                                                {trip.seatMap.map((seat) => {
-                                                    const isSelected = selectedSeats.includes(seat.id)
-                                                    const bg =
-                                                        seat.status === "sold"
-                                                            ? "bg-gray-400 cursor-not-allowed"
-                                                            : isSelected
-                                                                ? "bg-green-500"
-                                                                : "bg-white hover:bg-blue-100"
-
-                                                    return (
-                                                        <button
-                                                            key={seat.id}
-                                                            disabled={seat.status === "sold"}
-                                                            onClick={() => handleToggleSeat(seat.id)}
-                                                            className={`border rounded w-10 h-10 ${bg}`}
-                                                        >
-                                                            {seat.id}
-                                                        </button>
-                                                    )
-                                                })}
-                                            </div>
-                                            <div className="flex justify-between items-center mt-4">
-                                                <div className="text-sm">
-                                                    Ghế <span className="font-semibold text-blue-700">{selectedSeats.join(", ")}</span>
-                                                </div>
-                                                <Button disabled={selectedSeats.length === 0} onClick={() => setStep(2)}>Tiếp tục</Button>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {/* Step 2: Điểm đón và trả */}
-                                    {step === 2 && (
-                                        <>
-                                            <div className="grid md:grid-cols-2 gap-6">
-                                                <div>
-                                                    <p className="font-medium">Điểm đón</p>
-                                                    {trip.pickupPoints.map((option) => (
-                                                        <label key={option.time} className="flex items-center gap-2 py-1">
-                                                            <input type="radio" name="pickup" value={option.address} />
-                                                            <span>{option.time} - {option.address}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium">Điểm trả</p>
-                                                    {trip.dropoffPoints.map((option) => (
-                                                        <label key={option.time} className="flex items-center gap-2 py-1">
-                                                            <input type="radio" name="dropoff" value={option.address} />
-                                                            <span>{option.time} - {option.address}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="mt-4 flex justify-between">
-                                                <Button variant="outline" onClick={() => setStep(1)}>Quay lại</Button>
-                                                <Button onClick={() => setStep(3)}>Tiếp tục</Button>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {/* Step 3: Nhập thông tin */}
-                                    {step === 3 && (
-                                        <>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <label className="block text-sm font-medium">Họ và tên *</label>
-                                                    <Input value={buyerInfo.fullName} onChange={e => setBuyerInfo(prev => ({ ...prev, fullName: e.target.value }))} />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium">Số điện thoại *</label>
-                                                    <Input type="tel" value={buyerInfo.phone} onChange={e => setBuyerInfo(prev => ({ ...prev, phone: e.target.value }))} />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium">Email để nhận vé</label>
-                                                    <Input type="email" value={buyerInfo.email} onChange={e => setBuyerInfo(prev => ({ ...prev, email: e.target.value }))} />
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <input type="checkbox" checked={buyerInfo.wantInvoice} onChange={e => setBuyerInfo(prev => ({ ...prev, wantInvoice: e.target.checked }))} />
-                                                    <span>Tôi muốn xuất hóa đơn</span>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium">Ghi chú</label>
-                                                    <textarea
-                                                        rows={3}
-                                                        className="w-full border rounded px-3 py-2"
-                                                        value={buyerInfo.note}
-                                                        onChange={e => setBuyerInfo(prev => ({ ...prev, note: e.target.value }))}
-                                                    />
-                                                </div>
-                                                <div className="text-right flex justify-between">
-                                                    <Button variant="outline" onClick={() => setStep(2)}>Quay lại</Button>
-                                                    <Button className="bg-blue-600 text-white">Đặt vé</Button>
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                    {mockTrips.map((trip) => (
+                    <TripCard
+                        key={trip.id}
+                        trip={trip}
+                        expandedTripId={expandedTripId}
+                        setExpandedTripId={setExpandedTripId}
+                    />
                     ))}
                 </div>
             </div>
-
             <Footer />
         </main>
     )

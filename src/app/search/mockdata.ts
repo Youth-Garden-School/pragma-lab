@@ -37,6 +37,6 @@ export const filterOptions: FilterOptions = {
     "Chiều 12h - 18h",
     "Tối 18h - 24h"
   ],
-  vehicleTypes: ["Limousine", "Giường nằm", "Ghế ngồi"],
+  vehicleTypes: ["Limousine 10C", "Limousine 18C", "Giường nằm"],
   seatPositions: ["Hàng ghế đầu", "Hàng ghế giữa", "Hàng ghế cuối"]
 };
