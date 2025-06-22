@@ -1,9 +1,8 @@
-
-import React from 'react';
-import { DashboardHeader } from '@/feature/Admin/components/dashboard/DashboardHeader';
-import { DashboardSidebar } from '@/feature/Admin/components/dashboard/DashboardSidebar';
-import { VehicleManagement } from '@/feature/Admin/components/vehicles/VehicleManagement';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import React from 'react'
+import { DashboardHeader } from '@/feature/Admin/components/dashboard/DashboardHeader'
+import { DashboardSidebar } from '@/feature/Admin/components/dashboard/DashboardSidebar'
+import { VehicleManagement } from '@/feature/Admin/components/vehicles/VehicleManagement'
+import { SidebarProvider } from '@/components/ui/sidebar'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,7 +10,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
+} from '@/components/ui/breadcrumb'
 
 const Vehicles = () => {
   return (
@@ -32,20 +31,20 @@ const Vehicles = () => {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
-            
+
             <div>
               <h2 className="text-3xl font-bold tracking-tight">Vehicle Management</h2>
               <p className="text-muted-foreground">
                 Manage vehicles, types and seat configurations
               </p>
             </div>
-            
+
             <VehicleManagement />
           </main>
         </div>
       </div>
     </SidebarProvider>
-  );
-};
+  )
+}
 
-export default Vehicles;
+export default Vehicles
