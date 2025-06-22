@@ -1,17 +1,17 @@
-"use client" 
+"use client"
 
 import Footer from "@/components/Common/Layout/Footer"
 import Header from "@/components/Common/Layout/Header"
 
 import { useState, useRef, useEffect } from "react"
-import { format, addDays } from "date-fns"
+import { format, addDays, isSameDay, startOfDay } from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Calendar } from "@/components/ui/calendar"
 import { Calendar as CalendarIcon, X, Minus, Plus } from "lucide-react"
 
-import { mockTrips } from "./mockTrips"
+import { mockTrips, Trip } from "./mockTrips"
 
 import {
     Popover,
@@ -43,7 +43,7 @@ export default function Search() {
     const [adultCount, setAdultCount] = useState(1)
     const [childCount, setChildCount] = useState(0)
     const [showTicketPopover, setShowTicketPopover] = useState(false)
-    const [activeDateIndex, setActiveDateIndex] = useState(2)
+    const [activeDateIndex, setActiveDateIndex] = useState<number | null>(null)
 
     const [pickupFilterPoints, setPickupFilterPoints] = useState<StopPoint[]>([])
     const [dropoffFilterPoints, setDropoffFilterPoints] = useState<StopPoint[]>([])
@@ -56,33 +56,67 @@ export default function Search() {
 
     const totalTickets = adultCount + childCount
     const weekDays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"]
+
+    const [filteredTrips, setFilteredTrips] = useState<Trip[]>([])
+    const [hasSearched, setHasSearched] = useState(false)
+
     const dateOptions = Array.from({ length: 5 }, (_, i) => addDays(departureDate, i))
 
     const handleSearch = () => {
         const pickupPoint = stopPoints.find(sp => sp.name === pickupQuery)
         const dropoffPoint = stopPoints.find(sp => sp.name === dropoffQuery)
 
-        if (pickupPoint && dropoffPoint) {
-            if (pickupPoint.location === dropoffPoint.location) {
-                // Cùng khu vực => không hiển thị điểm nào ở bộ lọc
-                setPickupFilterPoints([])
-                setDropoffFilterPoints([])
-                return
-            }
-
-            // Đã chọn rõ 2 điểm và khác khu vực => hiển thị chính xác 2 điểm
-            setPickupFilterPoints([pickupPoint])
-            setDropoffFilterPoints([dropoffPoint])
+        if (!pickupPoint || !dropoffPoint) {
+            setPickupFilterPoints([])
+            setDropoffFilterPoints([])
+            setFilteredTrips([])
+            setHasSearched(true)
             return
         }
 
-        // Chưa chọn rõ ràng điểm đón hoặc điểm đến => không hiển thị gì
-        setPickupFilterPoints([])
-        setDropoffFilterPoints([])
+        if (pickupPoint.location === dropoffPoint.location) {
+            setPickupFilterPoints([])
+            setDropoffFilterPoints([])
+            setFilteredTrips([])
+            setHasSearched(true)
+            return
+        }
+
+        setPickupFilterPoints([pickupPoint])
+        setDropoffFilterPoints([dropoffPoint])
+
+        // Kiểm tra ngày
+        const isToday = isSameDay(startOfDay(departureDate), startOfDay(new Date()))
+
+        const result = mockTrips.filter(trip =>
+            trip.pickupLocation === pickupPoint.location &&
+            trip.dropoffLocation === dropoffPoint.location &&
+            trip.availableSeats >= totalTickets &&
+            !isToday
+        )
+
+        setFilteredTrips(result)
+
+        // Gán index ngày để UI highlight
+        const index = dateOptions.findIndex(date =>
+            isSameDay(startOfDay(date), startOfDay(departureDate))
+        )
+        setActiveDateIndex(index >= 0 ? index : null)
+
+        setHasSearched(true)
     }
 
     const [expandedTripId, setExpandedTripId] = useState<string | null>(null)
     const [selectedSeats, setSelectedSeats] = useState<string[]>([])
+    const [step, setStep] = useState<1 | 2 | 3>(1)
+
+    const [buyerInfo, setBuyerInfo] = useState({
+        fullName: "",
+        phone: "",
+        email: "",
+        note: "",
+        wantInvoice: false,
+    })
 
     const handleToggleSeat = (seatId: string) => {
         setSelectedSeats((prev) =>
@@ -90,34 +124,34 @@ export default function Search() {
         )
     }
 
-    useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-        if (pickupRef.current && !pickupRef.current.contains(event.target as Node)) {
-        setShowPickupPopover(false)
-        }
-        if (dropoffRef.current && !dropoffRef.current.contains(event.target as Node)) {
-        setShowDropoffPopover(false)
-        }
+    const clearAllFilters = () => {
+        setSelectedDepartureTimes([])
+        setSelectedVehicleTypes([])
+        setSelectedSeatPositions([])
+        setSelectedPickupPoints([])
+        setSelectedDropoffPoints([])
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-    }, [])
 
     const toggleSelection = (item: string, list: string[], setList: (val: string[]) => void) => {
-    if (list.includes(item)) {
-        setList(list.filter(i => i !== item))
-    } else {
-        setList([...list, item])
-    }
+        if (list.includes(item)) {
+            setList(list.filter(i => i !== item))
+        } else {
+            setList([...list, item])
+        }
     }
 
-    const clearAllFilters = () => {
-    setSelectedDepartureTimes([])
-    setSelectedVehicleTypes([])
-    setSelectedSeatPositions([])
-    setSelectedPickupPoints([])
-    setSelectedDropoffPoints([])
-    }
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (pickupRef.current && !pickupRef.current.contains(event.target as Node)) {
+                setShowPickupPopover(false)
+            }
+            if (dropoffRef.current && !dropoffRef.current.contains(event.target as Node)) {
+                setShowDropoffPopover(false)
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside)
+        return () => document.removeEventListener("mousedown", handleClickOutside)
+    }, [])
 
     return (
         <main className="min-h-screen pt-[120px]">
@@ -314,16 +348,17 @@ export default function Search() {
                 </div>
             </div>
             
+            {/* Kết quả và bộ lọc */}
             <div className="flex max-w-6xl mx-auto gap-6 pb-10">
-                {/* Cột lọc */}
+                {/* Sidebar lọc */}
                 <aside className="w-64 bg-white border rounded-xl p-4 space-y-6">
                     <div className="w-full flex bg-gray-100 rounded overflow-hidden">
                         <div className="bg-gray-100 px-4 py-2 flex-1">
                             <h2 className="text-lg font-semibold">Lọc</h2>
                         </div>
-                    {(selectedDepartureTimes.length > 0 || selectedVehicleTypes.length > 0 || selectedSeatPositions.length > 0 || selectedPickupPoints.length > 0 || selectedDropoffPoints.length > 0) && (
-                        <button onClick={clearAllFilters} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-300 transition">Xóa lọc</button>
-                    )}
+                        {(selectedDepartureTimes.length > 0 || selectedVehicleTypes.length > 0 || selectedSeatPositions.length > 0 || selectedPickupPoints.length > 0 || selectedDropoffPoints.length > 0) && (
+                            <button onClick={clearAllFilters} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-300 transition">Xóa lọc</button>
+                        )}
                     </div>
 
                     <div className="w-full">
@@ -400,123 +435,211 @@ export default function Search() {
                 </aside>
 
 
-                {/* Chọn Vé */}
+                {/* Danh sách chuyến xe */}
                 <div className="flex-1 space-y-4">
+                    {/* Dải ngày */}
                     <div className="flex gap-2 overflow-x-auto">
-                    {dateOptions.map((date, i) => (
-                        <Button
-                        key={i}
-                        variant={i === activeDateIndex ? "default" : "outline"}
-                        onClick={() => setActiveDateIndex(i)}
-                        >
-                        {weekDays[date.getDay()]} {format(date, "dd-MM-yyyy")}
-                        </Button>
-                    ))}
-                    <Popover>
-                        <PopoverTrigger asChild>
-                        <Button variant="outline"><CalendarIcon className="w-4 h-4" /></Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-white">
-                        <Calendar
-                            mode="single"
-                            selected={departureDate}
-                            onSelect={(date) => date && setDepartureDate(date)}
-                            disabled={(date) => date < new Date()}
-                        />
-                        </PopoverContent>
-                    </Popover>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                    {["Giờ đi sớm nhất", "Giờ đi muộn nhất", "Giá tăng dần", "Giá giảm dần"].map((label, i) => (
-                        <Button key={i} variant="outline" className="rounded-full">{label}</Button>
-                    ))}
-                    </div>
-
-                    {/* Danh sách các chuyến */}
-                    {mockTrips.map((trip) => (
-                    <div key={trip.id} className="bg-white border rounded-xl p-4 space-y-">
-                        <div className="flex justify-between items-center">
-                        <div>
-                            <p className="font-semibold">{trip.vehicleType}</p>
-                            <p className="text-gray-600">{trip.departureTime} → {trip.arrivalTime}</p>
-                            <p className="text-sm">{trip.pickupPoint} → {trip.dropoffPoint}</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-sm">Còn {trip.availableSeats} chỗ trống</p>
-                            <p className="font-bold text-lg text-blue-600">Từ {trip.price.toLocaleString()}đ</p>
+                        {dateOptions.map((date, i) => (
                             <Button
-                            onClick={() => {
-                                setExpandedTripId((prev) => (prev === trip.id ? null : trip.id))
-                                setSelectedSeats([])
-                            }}
+                                key={i}
+                                variant={i === activeDateIndex ? "default" : "outline"}
+                                onClick={() => {
+                                    setDepartureDate(date)
+                                    setActiveDateIndex(i)
+                                }}
                             >
-                            Chọn chuyến
+                                {weekDays[date.getDay()]} {format(date, "dd-MM-yyyy")}
                             </Button>
-                        </div>
-                        </div>
-
-                        {/* Hộp chọn ghế */}
-                        {expandedTripId === trip.id && (
-                        <div className="border-t pt-4">
-                            {/* Thanh progress */}
-                            <div className="flex justify-between mb-4 font-medium text-gray-600">
-                            <span className="text-blue-600">1. Chỗ mong muốn</span>
-                            <span>2. Điểm đón trả</span>
-                            <span>3. Nhập thông tin</span>
-                            </div>
-
-                            {/* Bảng chú thích */}
-                            <div className="flex gap-4 mb-2 text-sm">
-                            <div className="flex items-center gap-1">
-                                <div className="w-4 h-4 border bg-white" /> Còn trống
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <div className="w-4 h-4 bg-gray-400" /> Ghế không bán
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <div className="w-4 h-4 bg-green-500" /> Đang chọn
-                            </div>
-                            </div>
-
-                            {/* Bảng chọn ghế */}
-                            <div className="grid grid-cols-5 gap-2 max-w-xs">
-                            {trip.seats.map((seat) => {
-                                const isSelected = selectedSeats.includes(seat.id)
-                                const bg =
-                                seat.status === "sold"
-                                    ? "bg-gray-400 cursor-not-allowed"
-                                    : isSelected
-                                    ? "bg-green-500"
-                                    : "bg-white hover:bg-blue-100"
-
-                                return (
-                                <button
-                                    key={seat.id}
-                                    disabled={seat.status === "sold"}
-                                    onClick={() => handleToggleSeat(seat.id)}
-                                    className={`border rounded w-10 h-10 ${bg}`}
-                                >
-                                    {seat.id}
-                                </button>
-                                )
-                            })}
-                            </div>
-
-                            {/* Thông tin ghế và nút tiếp tục */}
-                            <div className="flex justify-between items-center mt-4">
-                            <div className="text-sm">
-                                Ghế <span className="font-semibold text-blue-700">{selectedSeats.join(", ")}</span>
-                            </div>
-                            <Button disabled={selectedSeats.length === 0}>
-                                Tiếp tục
-                            </Button>
-                            </div>
-                        </div>
-                        )}
+                        ))}
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline"><CalendarIcon className="w-4 h-4" /></Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-white">
+                                <Calendar
+                                    mode="single"
+                                    selected={departureDate}
+                                    onSelect={(date) => date && setDepartureDate(date)}
+                                    disabled={(date) => date < new Date()}
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
-                    ))}
 
+                    {/* Sắp xếp */}
+                    <div className="flex flex-wrap gap-2">
+                        {["Giờ đi sớm nhất", "Giờ đi muộn nhất", "Giá tăng dần", "Giá giảm dần"].map((label, i) => (
+                            <Button key={i} variant="outline" className="rounded-full">{label}</Button>
+                        ))}
+                    </div>
+
+                    {/* Danh sách chuyến */}
+                    {hasSearched && filteredTrips.length === 0 && (
+                        <p className="text-gray-600 italic">Không có chuyến xe phù hợp.</p>
+                    )}
+
+                    {filteredTrips.map((trip) => (
+                        <div key={trip.id} className="bg-white border rounded-xl p-4 space-y-2">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <p className="font-semibold">{trip.vehicleType}</p>
+                                    <p className="text-gray-600">{trip.departureTime} → {trip.arrivalTime}</p>
+                                    <p className="text-sm">{trip.pickupLocation} → {trip.dropoffLocation}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm">Còn {trip.availableSeats} chỗ trống</p>
+                                    <p className="font-bold text-lg text-blue-600">Từ {trip.price.toLocaleString()}đ</p>
+                                    <Button
+                                        onClick={() => {
+                                            if (expandedTripId === trip.id) {
+                                                setExpandedTripId(null)
+                                                setSelectedSeats([])
+                                                setStep(1)
+                                                setBuyerInfo({
+                                                    fullName: "",
+                                                    phone: "",
+                                                    email: "",
+                                                    note: "",
+                                                    wantInvoice: false,
+                                                })
+                                            } else {
+                                                setExpandedTripId(trip.id)
+                                                setSelectedSeats([])
+                                                setStep(1)
+                                                setBuyerInfo({
+                                                    fullName: "",
+                                                    phone: "",
+                                                    email: "",
+                                                    note: "",
+                                                    wantInvoice: false,
+                                                })
+                                            }
+                                        }}
+                                    >
+                                        {expandedTripId === trip.id ? "Thu gọn" : "Chọn chuyến"}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Giao diện đặt vé đa bước */}
+                            {expandedTripId === trip.id && (
+                                <div className="border-t pt-4 space-y-4">
+                                    {/* Tiến trình */}
+                                    <div className="flex justify-between mb-4 font-medium text-gray-600">
+                                        <span className={step === 1 ? "text-blue-600" : ""}>1. Chỗ mong muốn</span>
+                                        <span className={step === 2 ? "text-blue-600" : ""}>2. Điểm đón trả</span>
+                                        <span className={step === 3 ? "text-blue-600" : ""}>3. Nhập thông tin</span>
+                                    </div>
+
+                                    {/* Step 1: Ghế */}
+                                    {step === 1 && (
+                                        <>
+                                            <div className="flex gap-4 mb-2 text-sm">
+                                                <div className="flex items-center gap-1"><div className="w-4 h-4 border bg-white" /> Còn trống</div>
+                                                <div className="flex items-center gap-1"><div className="w-4 h-4 bg-gray-400" /> Ghế không bán</div>
+                                                <div className="flex items-center gap-1"><div className="w-4 h-4 bg-green-500" /> Đang chọn</div>
+                                            </div>
+                                            <div className="grid grid-cols-5 gap-2 max-w-xs">
+                                                {trip.seatMap.map((seat) => {
+                                                    const isSelected = selectedSeats.includes(seat.id)
+                                                    const bg =
+                                                        seat.status === "sold"
+                                                            ? "bg-gray-400 cursor-not-allowed"
+                                                            : isSelected
+                                                                ? "bg-green-500"
+                                                                : "bg-white hover:bg-blue-100"
+
+                                                    return (
+                                                        <button
+                                                            key={seat.id}
+                                                            disabled={seat.status === "sold"}
+                                                            onClick={() => handleToggleSeat(seat.id)}
+                                                            className={`border rounded w-10 h-10 ${bg}`}
+                                                        >
+                                                            {seat.id}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                            <div className="flex justify-between items-center mt-4">
+                                                <div className="text-sm">
+                                                    Ghế <span className="font-semibold text-blue-700">{selectedSeats.join(", ")}</span>
+                                                </div>
+                                                <Button disabled={selectedSeats.length === 0} onClick={() => setStep(2)}>Tiếp tục</Button>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Step 2: Điểm đón và trả */}
+                                    {step === 2 && (
+                                        <>
+                                            <div className="grid md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <p className="font-medium">Điểm đón</p>
+                                                    {trip.pickupPoints.map((option) => (
+                                                        <label key={option.time} className="flex items-center gap-2 py-1">
+                                                            <input type="radio" name="pickup" value={option.address} />
+                                                            <span>{option.time} - {option.address}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium">Điểm trả</p>
+                                                    {trip.dropoffPoints.map((option) => (
+                                                        <label key={option.time} className="flex items-center gap-2 py-1">
+                                                            <input type="radio" name="dropoff" value={option.address} />
+                                                            <span>{option.time} - {option.address}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="mt-4 flex justify-between">
+                                                <Button variant="outline" onClick={() => setStep(1)}>Quay lại</Button>
+                                                <Button onClick={() => setStep(3)}>Tiếp tục</Button>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Step 3: Nhập thông tin */}
+                                    {step === 3 && (
+                                        <>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium">Họ và tên *</label>
+                                                    <Input value={buyerInfo.fullName} onChange={e => setBuyerInfo(prev => ({ ...prev, fullName: e.target.value }))} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium">Số điện thoại *</label>
+                                                    <Input type="tel" value={buyerInfo.phone} onChange={e => setBuyerInfo(prev => ({ ...prev, phone: e.target.value }))} />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium">Email để nhận vé</label>
+                                                    <Input type="email" value={buyerInfo.email} onChange={e => setBuyerInfo(prev => ({ ...prev, email: e.target.value }))} />
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <input type="checkbox" checked={buyerInfo.wantInvoice} onChange={e => setBuyerInfo(prev => ({ ...prev, wantInvoice: e.target.checked }))} />
+                                                    <span>Tôi muốn xuất hóa đơn</span>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium">Ghi chú</label>
+                                                    <textarea
+                                                        rows={3}
+                                                        className="w-full border rounded px-3 py-2"
+                                                        value={buyerInfo.note}
+                                                        onChange={e => setBuyerInfo(prev => ({ ...prev, note: e.target.value }))}
+                                                    />
+                                                </div>
+                                                <div className="text-right flex justify-between">
+                                                    <Button variant="outline" onClick={() => setStep(2)}>Quay lại</Button>
+                                                    <Button className="bg-blue-600 text-white">Đặt vé</Button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
             </div>
 
