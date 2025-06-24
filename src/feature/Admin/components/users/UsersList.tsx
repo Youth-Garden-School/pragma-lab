@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Plus, Search, MoreHorizontal } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { mockUsers, Role } from '@/feature/Admin/data/mockData'
 import { UserDialog } from './UserDialog'
+import { toast } from 'sonner'
 
 interface User {
   userId: number
@@ -45,8 +46,29 @@ export const UsersList = () => {
   const [roleFilter, setRoleFilter] = useState('all')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const displayUsers = mockUsers.map((user) => ({
+  // Fetch users from API
+  const fetchUsers = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/users')
+      if (!res.ok) throw new Error('Failed to fetch users')
+      const data = await res.json()
+      setUsers(data.data)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fetch users')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const displayUsers = users.map((user) => ({
     ...user,
     roleBadge:
       user.role === Role.admin
@@ -54,7 +76,9 @@ export const UsersList = () => {
         : user.role === Role.employee
           ? 'default'
           : 'secondary',
-    formattedDate: user.dateOfBirth?.toLocaleDateString('vi-VN'),
+    formattedDate: user.dateOfBirth
+      ? new Date(user.dateOfBirth).toLocaleDateString('vi-VN')
+      : undefined,
   }))
 
   const filteredUsers = displayUsers.filter((user) => {
@@ -76,9 +100,16 @@ export const UsersList = () => {
     setIsDialogOpen(true)
   }
 
-  const handleDeleteUser = (userId: number) => {
-    console.log('Delete user:', userId)
-    // Here you would implement the actual delete logic
+  const handleDeleteUser = async (userId: number) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) return
+    try {
+      const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete user')
+      toast.success('User deleted successfully')
+      fetchUsers()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete user')
+    }
   }
 
   const handleResetPassword = (userId: number) => {
@@ -177,7 +208,14 @@ export const UsersList = () => {
         </Table>
       </CardContent>
 
-      <UserDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} user={editingUser} />
+      <UserDialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open)
+          if (!open) fetchUsers()
+        }}
+        user={editingUser}
+      />
     </Card>
   )
 }
