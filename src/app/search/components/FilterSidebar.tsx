@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import React from "react"
-import { StopPoint, filterOptions } from "../mockdata"
+import { Location, filterOptions } from "../mockdata"
 
 type Props = {
   selectedDepartureTimes: string[]
@@ -8,8 +8,8 @@ type Props = {
   selectedSeatPositions: string[]
   selectedPickupPoints: string[]
   selectedDropoffPoints: string[]
-  pickupFilterPoints: StopPoint[]
-  dropoffFilterPoints: StopPoint[]
+  pickupFilterPoints: Location[]
+  dropoffFilterPoints: Location[]
   onToggle: (item: string, list: string[], setList: (val: string[]) => void) => void
   clearAll: () => void
   setSelectedDepartureTimes: (val: string[]) => void
@@ -70,13 +70,13 @@ export default function TripFilterSidebar({
       <div className="w-full">
         <p className="font-medium mb-1">Loại xe</p>
         {filterOptions.vehicleTypes.map((opt) => (
-          <label key={opt} className="flex items-center gap-2 cursor-pointer">
+          <label key={opt.name} className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={selectedVehicleTypes.includes(opt)}
-              onChange={() => onToggle(opt, selectedVehicleTypes, setSelectedVehicleTypes)}
+              checked={selectedVehicleTypes.includes(opt.name)}
+              onChange={() => onToggle(opt.name, selectedVehicleTypes, setSelectedVehicleTypes)}
             />
-            {opt}
+            {opt.name}
           </label>
         ))}
       </div>
@@ -98,13 +98,13 @@ export default function TripFilterSidebar({
       <div className="w-full">
         <p className="font-medium mb-1">Điểm đón</p>
         {pickupFilterPoints.map((p) => (
-          <label key={p.id} className="flex items-center gap-2 cursor-pointer">
+          <label key={p.locationId} className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={selectedPickupPoints.includes(p.name)}
-              onChange={() => onToggle(p.name, selectedPickupPoints, setSelectedPickupPoints)}
+              checked={selectedPickupPoints.includes(p.detail)}
+              onChange={() => onToggle(p.detail, selectedPickupPoints, setSelectedPickupPoints)}
             />
-            {p.name}
+            {p.detail}
           </label>
         ))}
       </div>
@@ -112,13 +112,13 @@ export default function TripFilterSidebar({
       <div className="w-full">
         <p className="font-medium mb-1">Điểm trả</p>
         {dropoffFilterPoints.map((p) => (
-          <label key={p.id} className="flex items-center gap-2 cursor-pointer">
+          <label key={p.locationId} className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={selectedDropoffPoints.includes(p.name)}
-              onChange={() => onToggle(p.name, selectedDropoffPoints, setSelectedDropoffPoints)}
+              checked={selectedDropoffPoints.includes(p.detail)}
+              onChange={() => onToggle(p.detail, selectedDropoffPoints, setSelectedDropoffPoints)}
             />
-            {p.name}
+            {p.detail}
           </label>
         ))}
       </div>

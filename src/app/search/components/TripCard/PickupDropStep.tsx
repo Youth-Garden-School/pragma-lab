@@ -1,16 +1,15 @@
 import { Button } from "@/components/ui/button"
 import React from "react"
-import { Trip, PickupDropPoint } from "../../mockTrips"
+import { Trip, PickupDropPoint, TripStop } from "../../mockTrips"
 
 interface PickupDropStepProps {
-  pickupPoints: PickupDropPoint[]
-  dropoffPoints: PickupDropPoint[]
+  pickupPoints: TripStop[]
+  dropoffPoints: TripStop[]
   selectedPickup: string
   selectedDropoff: string
-  onSelectPickup: (address: string) => void
-  onSelectDropoff: (address: string) => void
+  onSelectPickup: (detail: string) => void
+  onSelectDropoff: (detail: string) => void
   onNext: () => void
-  onBack: () => void
 }
 
 export default function PickupDropStep({
@@ -21,7 +20,6 @@ export default function PickupDropStep({
   onSelectPickup,
   onSelectDropoff,
   onNext,
-  onBack,
 }: PickupDropStepProps) {
   return (
     <div className="space-y-4">
@@ -29,42 +27,35 @@ export default function PickupDropStep({
         <div>
           <p className="font-medium mb-1">Điểm đón</p>
           {pickupPoints.map((point) => (
-            <label key={point.time} className="flex items-center gap-2 py-1">
+            <label key={point.arrivalTime} className="flex items-center gap-2 py-1">
               <input
                 type="radio"
                 name="pickup"
-                value={point.address}
-                checked={selectedPickup === point.address}
-                onChange={() => onSelectPickup(point.address || "")}
+                value={point.location.detail}
+                checked={selectedPickup === point.location.detail}
+                onChange={() => onSelectPickup(point.location.detail || "")}
               />
-              <span>{point.time} - {point.address}</span>
+              <span>{point.arrivalTime} - {point.location.detail}</span>
             </label>
           ))}
         </div>
         <div>
           <p className="font-medium mb-1">Điểm trả</p>
           {dropoffPoints.map((point) => (
-            <label key={point.time} className="flex items-center gap-2 py-1">
+            <label key={point.arrivalTime} className="flex items-center gap-2 py-1">
               <input
                 type="radio"
                 name="dropoff"
-                value={point.address}
-                checked={selectedDropoff === point.address}
-                onChange={() => onSelectDropoff(point.address || "")}
+                value={point.location.detail}
+                checked={selectedDropoff === point.location.detail}
+                onChange={() => onSelectDropoff(point.location.detail || "")}
               />
-              <span>{point.time} - {point.address}</span>
+              <span>{point.arrivalTime} - {point.location.detail}</span>
             </label>
           ))}
         </div>
       </div>
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          className="bg-gray-600 hover:bg-red-500 text-white hover:text-white"
-          onClick={onBack}
-        >
-          Quay lại
-        </Button>
+      <div className="flex justify-end gap-2 mt-4">
         <Button
           className="bg-cyan-400 hover:bg-cyan-400 text-white"
           onClick={onNext}

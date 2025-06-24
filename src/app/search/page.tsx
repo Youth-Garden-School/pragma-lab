@@ -81,8 +81,8 @@ export default function SearchPage() {
                     setChildCount={setChildCount}
                     totalTickets={totalTickets}
                     handleSearch={handleSearch}
-                    setPickupPointId={setPickupPointId}
-                    setDropoffPointId={setDropoffPointId}
+                    setPickupPointId={(id: number) => setPickupPointId}
+                    setDropoffPointId={(id: number) =>setDropoffPointId}
                 />
             </div>
             {/* Kết quả và bộ lọc */}
@@ -94,8 +94,8 @@ export default function SearchPage() {
                     selectedSeatPositions={selectedSeatPositions}
                     selectedPickupPoints={selectedPickupPoints}
                     selectedDropoffPoints={selectedDropoffPoints}
-                    pickupFilterPoints={stopPoints.filter(p => p.id === pickupPointId || p.location === stopPoints.find(s => s.id === pickupPointId)?.location)}
-                    dropoffFilterPoints={stopPoints.filter(p => p.id === dropoffPointId || p.location === stopPoints.find(s => s.id === dropoffPointId)?.location)}
+                    pickupFilterPoints={stopPoints.filter(p => p.locationId === Number(pickupPointId) || p.province === stopPoints.find(s => s.locationId === Number(pickupPointId))?.province)}
+                    dropoffFilterPoints={stopPoints.filter(p => p.locationId === Number(dropoffPointId) || p.province === stopPoints.find(s => s.locationId === Number(dropoffPointId))?.province)}
                     onToggle={onToggle}
                     clearAll={clearAll}
                     setSelectedDepartureTimes={setSelectedDepartureTimes}
@@ -126,7 +126,7 @@ export default function SearchPage() {
                     {/* Danh sách chuyến */}
                     {mockTrips.map((trip) => (
                     <TripCard
-                        key={trip.id}
+                        key={trip.TripId}
                         trip={trip}
                         expandedTripId={expandedTripId}
                         setExpandedTripId={setExpandedTripId}
