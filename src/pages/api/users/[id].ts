@@ -2,17 +2,34 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { ApiResponseBuilder } from '@/shared/utils/ApiResponseBuilder'
 import prisma from '@/configs/prisma/prisma'
 import bcrypt from 'bcrypt'
+import { sessionWrapper } from '@/shared/utils/sessionWrapper'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   let { id } = req.query
-  let userId: number | null = null
   if (id === 'me') {
-    // TODO: Replace with real session userId
-    userId = 1 // Hardcoded for demo
-  } else {
-    userId = parseInt(id as string)
+    // Use sessionWrapper to get userId from session
+    return sessionWrapper(async (req, res, userId) => {
+      switch (req.method) {
+        case 'GET':
+          return await getUserById(req, res, userId)
+        case 'PUT':
+          return await updateUser(req, res, userId)
+        case 'DELETE':
+          return await deleteUser(req, res, userId)
+        default:
+          return res
+            .status(405)
+            .json(
+              new ApiResponseBuilder()
+                .setStatusCode(405)
+                .setCode('METHOD_NOT_ALLOWED')
+                .setMessage('Method not allowed')
+                .build(),
+            )
+      }
+    })(req, res)
   }
-
+  let userId: number | null = parseInt(id as string)
   if (!userId || isNaN(userId)) {
     return res
       .status(400)
@@ -24,7 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .build(),
       )
   }
-
   try {
     switch (req.method) {
       case 'GET':
