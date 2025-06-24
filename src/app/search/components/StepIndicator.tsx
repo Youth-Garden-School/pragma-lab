@@ -4,9 +4,8 @@ import { cn } from "@/lib/utils"
 import React from "react"
 
 const steps = [
-  { step: 1, label: "Chỗ mong muốn" },
-  { step: 2, label: "Điểm đón trả" },
-  { step: 3, label: "Nhập thông tin" },
+  { step: 1, label: "Điểm đón trả" },
+  { step: 2, label: "Nhập thông tin" },
 ]
 
 export default function StepIndicator({ step }: { step: number }) {

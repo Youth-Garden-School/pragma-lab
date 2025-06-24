@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { StopPoint } from "../mockdata"
+import { Location } from "../mockdata"
 
 interface Props {
-  stopPoints: StopPoint[]
+  stopPoints: Location[]
   departureDate: Date
   setDepartureDate: (d: Date) => void
   adultCount: number
@@ -17,8 +17,8 @@ interface Props {
   setChildCount: (v: number) => void
   totalTickets: number
   handleSearch: () => void
-  setPickupPointId: (id: string) => void
-  setDropoffPointId: (id: string) => void
+  setPickupPointId: (id: number) => void
+  setDropoffPointId: (id: number) => void
 }
 
 export default function SearchForm({
@@ -46,22 +46,22 @@ export default function SearchForm({
   const dropoffRef = useRef<HTMLDivElement | null>(null)
 
   const getFilteredLocations = (query: string) => {
-    return Array.from(new Set(stopPoints.map(p => p.location))).filter(loc =>
+    return Array.from(new Set(stopPoints.map(p => p.province))).filter(loc =>
       loc.toLowerCase().includes(query.toLowerCase()) ||
-      stopPoints.some(sp => sp.location === loc && sp.name.toLowerCase().includes(query.toLowerCase()))
+      stopPoints.some(sp => sp.province === loc && sp.detail.toLowerCase().includes(query.toLowerCase()))
     )
   }
 
-  const handlePickupSelect = (sp: StopPoint) => {
-    setPickupQuery(sp.name)
-    setPickupPointId(sp.id)
+  const handlePickupSelect = (sp: Location) => {
+    setPickupQuery(sp.detail)
+    setPickupPointId(sp.locationId)
     setExpandedPickup(null)
     setShowPickupPopover(false)
   }
 
-  const handleDropoffSelect = (sp: StopPoint) => {
-    setDropoffQuery(sp.name)
-    setDropoffPointId(sp.id)
+  const handleDropoffSelect = (sp: Location) => {
+    setDropoffQuery(sp.detail)
+    setDropoffPointId(sp.locationId)
     setExpandedDropoff(null)
     setShowDropoffPopover(false)
   }
@@ -102,14 +102,14 @@ export default function SearchForm({
                   {expandedPickup === location && (
                     <div className="pl-4 py-1 space-y-1">
                       {stopPoints
-                        .filter(sp => sp.location === location && sp.name.toLowerCase().includes(pickupQuery.toLowerCase()))
+                        .filter(sp => sp.province === location && sp.detail.toLowerCase().includes(pickupQuery.toLowerCase()))
                         .map(sp => (
                           <div
-                            key={sp.id}
+                            key={sp.locationId}
                             className="cursor-pointer px-2 py-1 hover:bg-blue-100 rounded"
                             onClick={() => handlePickupSelect(sp)}
                           >
-                            {sp.name}
+                            {sp.detail}
                           </div>
                         ))}
                     </div>
@@ -144,14 +144,14 @@ export default function SearchForm({
                   {expandedDropoff === location && (
                     <div className="pl-4 py-1 space-y-1">
                       {stopPoints
-                        .filter(sp => sp.location === location && sp.name.toLowerCase().includes(dropoffQuery.toLowerCase()))
+                        .filter(sp => sp.province === location && sp.detail.toLowerCase().includes(dropoffQuery.toLowerCase()))
                         .map(sp => (
                           <div
-                            key={sp.id}
+                            key={sp.locationId}
                             className="cursor-pointer px-2 py-1 hover:bg-purple-100 rounded"
                             onClick={() => handleDropoffSelect(sp)}
                           >
-                            {sp.name}
+                            {sp.detail}
                           </div>
                         ))}
                     </div>

@@ -1,5 +1,5 @@
 
-import { Seat, Trip, PickupDropPoint } from "../../mockTrips"
+import { Trip, PickupDropPoint } from "../../mockTrips"
 
 export interface BuyerInfo {
   fullName: string
@@ -9,15 +9,7 @@ export interface BuyerInfo {
   wantInvoice: boolean
 }
 
-export type Step = 1 | 2 | 3
-
-export interface SeatStepProps {
-  seats: Seat[]
-  selectedSeats: string[]
-  price: number
-  onToggleSeat: (seatId: string) => void
-  onNext: () => void
-}
+export type Step = 1 | 2
 
 export interface PickupDropStepProps {
   pickupPoints: PickupDropPoint[]
@@ -27,7 +19,6 @@ export interface PickupDropStepProps {
   onSelectPickup: (address: string) => void
   onSelectDropoff: (address: string) => void
   onNext: () => void
-  onBack: () => void
 }
 
 export interface BuyerInfoStepProps {

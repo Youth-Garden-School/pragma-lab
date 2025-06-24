@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import StepIndicator from "../StepIndicator"
-import SeatStep from "./SeatStep"
 import PickupDropStep from "./PickupDropStep"
 import BuyerInfoStep from "./BuyerInfoStep"
 import { Trip } from "../../mockTrips"
@@ -14,8 +13,8 @@ interface TripCardProps {
 }
 
 export default function TripCard({ trip, expandedTripId, setExpandedTripId }: TripCardProps) {
-    const [step, setStep] = useState<1 | 2 | 3>(1)
-    const [selectedSeats, setSelectedSeats] = useState<string[]>([])
+    const [step, setStep] = useState<1 | 2>(1)
+    // const [selectedSeats, setSelectedSeats] = useState<string[]>([])
     const [buyerInfo, setBuyerInfo] = useState<BuyerInfo>({
         fullName: "",
         phone: "",
@@ -27,18 +26,18 @@ export default function TripCard({ trip, expandedTripId, setExpandedTripId }: Tr
     const [selectedPickup, setSelectedPickup] = useState("");
     const [selectedDropoff, setSelectedDropoff] = useState("");
 
-    const isExpanded = expandedTripId === trip.id
+    const isExpanded = expandedTripId === trip.TripId
 
     const handleSelectTrip = () => {
         if (isExpanded) {
             setExpandedTripId(null)
             setStep(1)
-            setSelectedSeats([])
+            // setSelectedSeats([])
             setBuyerInfo({ fullName: "", phone: "", email: "", note: "", wantInvoice: false })
         } else {
-            setExpandedTripId(trip.id)
+            setExpandedTripId(trip.TripId)
             setStep(1)
-            setSelectedSeats([])
+            // setSelectedSeats([])
             setBuyerInfo({ fullName: "", phone: "", email: "", note: "", wantInvoice: false })
         }
     }
@@ -47,13 +46,13 @@ export default function TripCard({ trip, expandedTripId, setExpandedTripId }: Tr
         <div className="bg-white border rounded-xl p-4 space-y-2">
             <div className="flex justify-between items-center">
                 <div>
-                    <p className="font-semibold">{trip.vehicleType}</p>
+                    <p className="font-semibold">{trip.vehicle.vehicleType.name}</p>
                     <p className="text-gray-600">{trip.departureTime} → {trip.arrivalTime}</p>
-                    <p className="text-sm">{trip.pickupLocation} → {trip.dropoffLocation}</p>
+                    <p className="text-sm">{trip.pickupStops?.[0].location.detail} → {trip.dropoffStops?.[0].location.detail}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-sm">Còn {trip.availableSeats} chỗ trống</p>
-                    <p className="font-bold text-lg text-blue-600">Từ {trip.price.toLocaleString()}đ</p>
+                    <p className="text-sm">Còn {trip.vehicletype.seatCapacity} chỗ trống</p>
+                    <p className="font-bold text-lg text-blue-600">Từ {trip.vehicletype.pricePerSeat.toLocaleString()}đ</p>
                     <Button
                         className="bg-cyan-500 hover:bg-cyan-500 text-white font-bold"
                         onClick={handleSelectTrip}
@@ -68,28 +67,18 @@ export default function TripCard({ trip, expandedTripId, setExpandedTripId }: Tr
                     <StepIndicator step={step} />
 
                     {step === 1 && (
-                        <SeatStep
-                            trip={trip}
-                            selectedSeats={selectedSeats}
-                            setSelectedSeats={setSelectedSeats}
+                        <PickupDropStep
+                            pickupPoints={trip.pickupStops}
+                            dropoffPoints={trip.dropoffStops}
+                            selectedPickup={selectedPickup}
+                            selectedDropoff={selectedDropoff}
+                            onSelectPickup={setSelectedPickup}
+                            onSelectDropoff={setSelectedDropoff}
                             onNext={() => setStep(2)}
                         />
                     )}
 
                     {step === 2 && (
-                        <PickupDropStep
-                            pickupPoints={trip.pickupPoints}
-                            dropoffPoints={trip.dropoffPoints}
-                            selectedPickup={selectedPickup}
-                            selectedDropoff={selectedDropoff}
-                            onSelectPickup={setSelectedPickup}
-                            onSelectDropoff={setSelectedDropoff}
-                            onBack={() => setStep(1)}
-                            onNext={() => setStep(3)}
-                        />
-                    )}
-
-                    {step === 3 && (
                     <BuyerInfoStep
                         buyerInfo={buyerInfo}
                         onChange={(field, value) => {
@@ -98,12 +87,11 @@ export default function TripCard({ trip, expandedTripId, setExpandedTripId }: Tr
                             [field]: value,
                         }))
                         }}
-                        onBack={() => setStep(2)}
+                        onBack={() => setStep(1)}
                         onSubmit={() => {
                         // Xử lý logic đặt vé ở đây
                         console.log("Thông tin đặt vé:", {
-                            tripId: trip.id,
-                            seats: selectedSeats,
+                            tripId: trip.TripId,
                             pickup: selectedPickup,
                             dropoff: selectedDropoff,
                             buyerInfo,
@@ -112,7 +100,6 @@ export default function TripCard({ trip, expandedTripId, setExpandedTripId }: Tr
                         // Sau khi đặt vé thành công, có thể reset form:
                         setExpandedTripId(null)
                         setStep(1)
-                        setSelectedSeats([])
                         setSelectedPickup("")
                         setSelectedDropoff("")
                         setBuyerInfo({
