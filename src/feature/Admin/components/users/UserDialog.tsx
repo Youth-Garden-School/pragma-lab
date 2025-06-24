@@ -1,24 +1,37 @@
 'use client'
 
-import React from 'react';
-import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { useForm } from 'react-hook-form';
-import { cn } from '@/lib/utils';
-import { Role } from '@/feature/Admin/data/mockData';
-import { toast } from 'sonner';
+import React from 'react'
+import { format } from 'date-fns'
+import { CalendarIcon } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
+import { useForm } from 'react-hook-form'
+import { cn } from '@/lib/utils'
+import { Role } from '@/feature/Admin/data/mockData'
+import { toast } from 'sonner'
 
 interface UserDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  user?: any;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  user?: any
 }
 
 export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
@@ -30,8 +43,8 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
       address: '',
       role: Role.customer,
       dateOfBirth: undefined,
-    }
-  });
+    },
+  })
 
   React.useEffect(() => {
     if (user) {
@@ -42,7 +55,7 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
         address: user.address,
         role: user.role,
         dateOfBirth: user.dateOfBirth,
-      });
+      })
     } else {
       form.reset({
         name: '',
@@ -51,20 +64,48 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
         address: '',
         role: Role.customer,
         dateOfBirth: undefined,
-      });
+      })
     }
-  }, [user, form]);
+  }, [user, form])
+
+  // Thêm hàm gọi API
+  const createUser = async (data: any) => {
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('Failed to create user')
+      toast.success('User created successfully')
+      onOpenChange(false)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create user')
+    }
+  }
+
+  const updateUser = async (data: any) => {
+    try {
+      const res = await fetch(`/api/users/${user.userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error('Failed to update user')
+      toast.success('User updated successfully')
+      onOpenChange(false)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update user')
+    }
+  }
 
   const onSubmit = (data: any) => {
     if (user) {
-      console.log('Updating user ID:', user.userId, 'with data:', data);
-      toast.success('User updated successfully');
+      updateUser(data)
     } else {
-      console.log('Creating new user with data:', data);
-      toast.success('User created successfully');
+      createUser(data)
     }
-    onOpenChange(false);
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,7 +128,7 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
@@ -101,7 +142,7 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="phone"
@@ -115,7 +156,7 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="address"
@@ -129,7 +170,7 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="role"
@@ -152,7 +193,7 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="dateOfBirth"
@@ -163,17 +204,13 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
-                          variant={"outline"}
+                          variant={'outline'}
                           className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
+                            'w-full pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground',
                           )}
                         >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
+                          {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -183,11 +220,9 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
+                        disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
                         initialFocus
-                        className={cn("p-3 pointer-events-auto")}
+                        className={cn('p-3 pointer-events-auto')}
                       />
                     </PopoverContent>
                   </Popover>
@@ -195,18 +230,16 @@ export const UserDialog = ({ open, onOpenChange, user }: UserDialogProps) => {
                 </FormItem>
               )}
             />
-            
+
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {user ? 'Update' : 'Create'} User
-              </Button>
+              <Button type="submit">{user ? 'Update' : 'Create'} User</Button>
             </div>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}
