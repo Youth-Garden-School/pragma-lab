@@ -1,5 +1,4 @@
-
-import { Trip, PickupDropPoint } from "../../mockTrips"
+import { Trip, PickupDropPoint } from '../../mockTrips'
 
 export interface BuyerInfo {
   fullName: string
@@ -12,8 +11,8 @@ export interface BuyerInfo {
 export type Step = 1 | 2
 
 export interface PickupDropStepProps {
-  pickupPoints: PickupDropPoint[]
-  dropoffPoints: PickupDropPoint[]
+  pickupPoints: any[]
+  dropoffPoints: any[]
   selectedPickup: string
   selectedDropoff: string
   onSelectPickup: (address: string) => void

@@ -20,14 +20,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
-import {
-  mockVehicles,
-  mockUsers,
-  mockVehicleTypes,
-  mockLocations,
-  mockTripStops,
-  TripStatus,
-} from '@/feature/Admin/data/mockData'
+import { TripStatus } from '@/feature/Admin/data/mockData'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -35,6 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { format } from 'date-fns'
 import { Label } from '@/components/ui/label'
+import useSWR from 'swr'
 
 interface TripEditDialogProps {
   open: boolean
@@ -52,6 +46,9 @@ interface TripStop {
   isPickup: boolean
 }
 
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
 export const TripEditDialog = ({ open, onOpenChange, trip }: TripEditDialogProps) => {
   const [tripStops, setTripStops] = useState<TripStop[]>([])
 
@@ -64,55 +61,52 @@ export const TripEditDialog = ({ open, onOpenChange, trip }: TripEditDialogProps
     },
   })
 
+  // Fetch vehicles, locations, drivers
+  const { data: vehiclesData } = useSWR('/api/vehicles', fetcher)
+  const { data: locationsData } = useSWR('/api/locations', fetcher)
+  const { data: driversData } = useSWR('/api/users?role=employee', fetcher)
+  const availableDrivers = Array.isArray(driversData?.data)
+    ? driversData.data.filter((driver: any) => driver.role === 'employee')
+    : []
+
+  const vehicles = vehiclesData?.data || []
+  const locations = locationsData?.data || []
+
   useEffect(() => {
     if (trip) {
-      // Populate vehicle relations
-      const vehicle = mockVehicles.find((v) => v.vehicleId === trip.vehicleId)
-      if (vehicle) {
-        vehicle.vehicleType = mockVehicleTypes.find(
-          (vt) => vt.vehicleTypeId === vehicle.vehicleTypeId,
-        )
-        trip.vehicle = vehicle
-      }
-
-      // Populate driver relations
-      const driver = mockUsers.find((u) => u.userId === trip.driverId)
-      if (driver) {
-        trip.driver = driver
-      }
-
-      // Populate trip stops
-      const stops = mockTripStops
-        .filter((ts) => ts.tripId === trip.tripId)
-        .map((stop) => ({
-          id: Date.now().toString() + stop.tripStopId,
-          tripStopId: stop.tripStopId,
-          locationId: stop.locationId,
-          stopOrder: stop.stopOrder,
-          arrivalTime: new Date(stop.arrivalTime),
-          departureTime: new Date(stop.departureTime),
-          isPickup: stop.isPickup,
-        }))
-        .sort((a, b) => a.stopOrder - b.stopOrder)
-
+      // Populate trip stops from trip data if available
+      const stops =
+        trip.tripStops
+          ?.map((stop: any) => ({
+            id: Date.now().toString() + (stop.tripStopId || ''),
+            tripStopId: stop.tripStopId,
+            locationId: stop.locationId,
+            stopOrder: stop.stopOrder,
+            arrivalTime: stop.arrivalTime ? new Date(stop.arrivalTime) : undefined,
+            departureTime: stop.departureTime ? new Date(stop.departureTime) : undefined,
+            isPickup: stop.isPickup,
+          }))
+          .sort((a: any, b: any) => a.stopOrder - b.stopOrder) || []
       setTripStops(stops)
-
       form.reset({
         vehicleId: trip.vehicleId?.toString() || '',
         driverId: trip.driverId?.toString() || '',
         status: trip.status || TripStatus.upcoming,
         note: trip.note || '',
       })
+    } else {
+      setTripStops([])
+      form.reset({
+        vehicleId: '',
+        driverId: '',
+        status: TripStatus.upcoming,
+        note: '',
+      })
     }
   }, [trip, form])
 
-  const availableDrivers = mockUsers.filter((user) => user.role === 'employee')
-
-  // Populate vehicle types for display
-  const vehiclesWithTypes = mockVehicles.map((vehicle) => ({
-    ...vehicle,
-    vehicleType: mockVehicleTypes.find((vt) => vt.vehicleTypeId === vehicle.vehicleTypeId),
-  }))
+  // Populate vehicle types for display (from API)
+  // const vehiclesWithTypes = ... (if needed, else just use vehicles)
 
   const handleAddStop = () => {
     const newStop: TripStop = {
@@ -134,25 +128,51 @@ export const TripEditDialog = ({ open, onOpenChange, trip }: TripEditDialogProps
     setTripStops(tripStops.map((stop) => (stop.id === stopId ? { ...stop, [field]: value } : stop)))
   }
 
-  const onSubmit = (data: any) => {
-    console.log('Trip update data:', {
+  const onSubmit = async (data: any) => {
+    const payload = {
       ...data,
       vehicleId: parseInt(data.vehicleId),
       driverId: parseInt(data.driverId),
       tripStops: tripStops.map((stop) => ({
-        ...stop,
         locationId: parseInt(stop.locationId.toString()),
-        tripId: trip?.tripId,
+        arrivalTime: stop.arrivalTime ? stop.arrivalTime.toISOString() : undefined,
+        departureTime: stop.departureTime ? stop.departureTime.toISOString() : undefined,
+        isPickup: stop.isPickup,
+        stopOrder: stop.stopOrder,
       })),
-    })
-
-    if (trip) {
-      toast.success(`Trip #${trip.tripId?.toString().padStart(4, '0')} updated successfully`)
-    } else {
-      toast.success('Trip created successfully')
     }
 
-    onOpenChange(false)
+    try {
+      let response
+      if (trip) {
+        // Update trip
+        response = await fetch(`/api/trip/${trip.tripId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+      } else {
+        // Create trip
+        response = await fetch('/api/trip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+      }
+      const result = await response.json()
+      if (response.ok) {
+        toast.success(
+          trip
+            ? `Trip #${trip.tripId?.toString().padStart(4, '0')} updated successfully`
+            : 'Trip created successfully',
+        )
+        onOpenChange(false)
+      } else {
+        toast.error(result.message || 'Operation failed')
+      }
+    } catch (error) {
+      toast.error('Network error')
+    }
   }
 
   return (
@@ -179,7 +199,7 @@ export const TripEditDialog = ({ open, onOpenChange, trip }: TripEditDialogProps
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {vehiclesWithTypes.map((vehicle) => (
+                        {vehicles.map((vehicle: any) => (
                           <SelectItem key={vehicle.vehicleId} value={vehicle.vehicleId.toString()}>
                             {vehicle.licensePlate} - {vehicle.vehicleType?.name || 'Unknown Type'}
                           </SelectItem>
@@ -204,7 +224,7 @@ export const TripEditDialog = ({ open, onOpenChange, trip }: TripEditDialogProps
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {availableDrivers.map((driver) => (
+                        {availableDrivers.map((driver: any) => (
                           <SelectItem key={driver.userId} value={driver.userId.toString()}>
                             {driver.name} - {driver.phone}
                           </SelectItem>
@@ -301,17 +321,9 @@ export const TripEditDialog = ({ open, onOpenChange, trip }: TripEditDialogProps
                               <SelectValue placeholder="Select location" />
                             </SelectTrigger>
                             <SelectContent>
-                              {mockLocations.map((location) => (
-                                <SelectItem
-                                  key={location.locationId}
-                                  value={location.locationId.toString()}
-                                >
-                                  <div className="flex flex-col">
-                                    <span>{location.detail}</span>
-                                    <span className="text-sm text-gray-500">
-                                      {location.province}
-                                    </span>
-                                  </div>
+                              {locations.map((loc: any) => (
+                                <SelectItem key={loc.locationId} value={loc.locationId.toString()}>
+                                  {loc.detail} - {loc.province}
                                 </SelectItem>
                               ))}
                             </SelectContent>

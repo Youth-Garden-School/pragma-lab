@@ -1,11 +1,11 @@
-import React, { useRef, useState, useEffect } from "react"
-import { format } from "date-fns"
-import { Calendar as CalendarIcon, X, Minus, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Location } from "../mockdata"
+import React, { useRef, useState, useEffect } from 'react'
+import { format } from 'date-fns'
+import { Calendar as CalendarIcon, X, Minus, Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Location } from '@/hooks/use-locations'
 
 interface Props {
   stopPoints: Location[]
@@ -17,8 +17,8 @@ interface Props {
   setChildCount: (v: number) => void
   totalTickets: number
   handleSearch: () => void
-  setPickupPointId: (id: number) => void
-  setDropoffPointId: (id: number) => void
+  setPickupPointId: (id: string | number) => void
+  setDropoffPointId: (id: string | number) => void
 }
 
 export default function SearchForm({
@@ -34,8 +34,8 @@ export default function SearchForm({
   setPickupPointId,
   setDropoffPointId,
 }: Props) {
-  const [pickupQuery, setPickupQuery] = useState("")
-  const [dropoffQuery, setDropoffQuery] = useState("")
+  const [pickupQuery, setPickupQuery] = useState('')
+  const [dropoffQuery, setDropoffQuery] = useState('')
   const [showPickupPopover, setShowPickupPopover] = useState(false)
   const [showDropoffPopover, setShowDropoffPopover] = useState(false)
   const [expandedPickup, setExpandedPickup] = useState<string | null>(null)
@@ -46,9 +46,12 @@ export default function SearchForm({
   const dropoffRef = useRef<HTMLDivElement | null>(null)
 
   const getFilteredLocations = (query: string) => {
-    return Array.from(new Set(stopPoints.map(p => p.province))).filter(loc =>
-      loc.toLowerCase().includes(query.toLowerCase()) ||
-      stopPoints.some(sp => sp.province === loc && sp.detail.toLowerCase().includes(query.toLowerCase()))
+    return Array.from(new Set(stopPoints.map((p) => p.province))).filter(
+      (loc) =>
+        loc.toLowerCase().includes(query.toLowerCase()) ||
+        stopPoints.some(
+          (sp) => sp.province === loc && sp.detail.toLowerCase().includes(query.toLowerCase()),
+        ),
     )
   }
 
@@ -68,11 +71,13 @@ export default function SearchForm({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (pickupRef.current && !pickupRef.current.contains(event.target as Node)) setShowPickupPopover(false)
-      if (dropoffRef.current && !dropoffRef.current.contains(event.target as Node)) setShowDropoffPopover(false)
+      if (pickupRef.current && !pickupRef.current.contains(event.target as Node))
+        setShowPickupPopover(false)
+      if (dropoffRef.current && !dropoffRef.current.contains(event.target as Node))
+        setShowDropoffPopover(false)
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   return (
@@ -91,19 +96,25 @@ export default function SearchForm({
           {showPickupPopover && (
             <div className="absolute z-50 mt-1 bg-white shadow-lg border rounded-xl max-h-64 overflow-y-auto w-full">
               <div className="w-full text-left px-2 py-2 font-semibold">Tỉnh - Thành phố</div>
-              {getFilteredLocations(pickupQuery).map(location => (
+              {getFilteredLocations(pickupQuery).map((location) => (
                 <div key={location} className="border-b last:border-b-0">
                   <button
                     className="w-full text-left px-2 py-2 hover:bg-blue-50"
-                    onClick={() => setExpandedPickup(prev => (prev === location ? null : location))}
+                    onClick={() =>
+                      setExpandedPickup((prev) => (prev === location ? null : location))
+                    }
                   >
                     {location}
                   </button>
                   {expandedPickup === location && (
                     <div className="pl-4 py-1 space-y-1">
                       {stopPoints
-                        .filter(sp => sp.province === location && sp.detail.toLowerCase().includes(pickupQuery.toLowerCase()))
-                        .map(sp => (
+                        .filter(
+                          (sp) =>
+                            sp.province === location &&
+                            sp.detail.toLowerCase().includes(pickupQuery.toLowerCase()),
+                        )
+                        .map((sp) => (
                           <div
                             key={sp.locationId}
                             className="cursor-pointer px-2 py-1 hover:bg-blue-100 rounded"
@@ -133,19 +144,25 @@ export default function SearchForm({
           {showDropoffPopover && (
             <div className="absolute z-50 mt-1 bg-white shadow-lg border rounded-xl max-h-64 overflow-y-auto w-full">
               <div className="w-full text-left px-3 py-2 font-semibold">Tỉnh - Thành phố</div>
-              {getFilteredLocations(dropoffQuery).map(location => (
+              {getFilteredLocations(dropoffQuery).map((location) => (
                 <div key={location} className="border-b last:border-b-0">
                   <button
                     className="w-full text-left px-3 py-2 hover:bg-purple-50"
-                    onClick={() => setExpandedDropoff(prev => (prev === location ? null : location))}
+                    onClick={() =>
+                      setExpandedDropoff((prev) => (prev === location ? null : location))
+                    }
                   >
                     {location}
                   </button>
                   {expandedDropoff === location && (
                     <div className="pl-4 py-1 space-y-1">
                       {stopPoints
-                        .filter(sp => sp.province === location && sp.detail.toLowerCase().includes(dropoffQuery.toLowerCase()))
-                        .map(sp => (
+                        .filter(
+                          (sp) =>
+                            sp.province === location &&
+                            sp.detail.toLowerCase().includes(dropoffQuery.toLowerCase()),
+                        )
+                        .map((sp) => (
                           <div
                             key={sp.locationId}
                             className="cursor-pointer px-2 py-1 hover:bg-purple-100 rounded"
@@ -169,7 +186,7 @@ export default function SearchForm({
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full h-11 text-left">
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(departureDate, "dd-MM-yyyy")}
+                {format(departureDate, 'dd-MM-yyyy')}
                 <X className="ml-auto h-4 w-4" />
               </Button>
             </PopoverTrigger>
@@ -198,20 +215,30 @@ export default function SearchForm({
               <div className="mb-4">
                 <p className="font-medium">Người lớn</p>
                 <div className="flex gap-3 items-center mt-1">
-                  <Button size="icon" onClick={() => setAdultCount(Math.max(1, adultCount - 1))}><Minus /></Button>
+                  <Button size="icon" onClick={() => setAdultCount(Math.max(1, adultCount - 1))}>
+                    <Minus />
+                  </Button>
                   <span>{adultCount}</span>
-                  <Button size="icon" onClick={() => setAdultCount(adultCount + 1)}><Plus /></Button>
+                  <Button size="icon" onClick={() => setAdultCount(adultCount + 1)}>
+                    <Plus />
+                  </Button>
                 </div>
               </div>
               <div>
                 <p className="font-medium">Em bé</p>
                 <div className="flex gap-3 items-center mt-1">
-                  <Button size="icon" onClick={() => setChildCount(Math.max(0, childCount - 1))}><Minus /></Button>
+                  <Button size="icon" onClick={() => setChildCount(Math.max(0, childCount - 1))}>
+                    <Minus />
+                  </Button>
                   <span>{childCount}</span>
-                  <Button size="icon" onClick={() => setChildCount(childCount + 1)}><Plus /></Button>
+                  <Button size="icon" onClick={() => setChildCount(childCount + 1)}>
+                    <Plus />
+                  </Button>
                 </div>
               </div>
-              <Button className="mt-4 w-full" onClick={() => setShowTicketPopover(false)}>Xong</Button>
+              <Button className="mt-4 w-full" onClick={() => setShowTicketPopover(false)}>
+                Xong
+              </Button>
             </PopoverContent>
           </Popover>
         </div>

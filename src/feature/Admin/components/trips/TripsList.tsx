@@ -15,6 +15,8 @@ import { TripApi, Trip, TripStatus } from '@/feature/Admin/apis/TripApi'
 import { LoadingIndicator } from '@/components/Common/LoadingIndicator'
 import { format } from 'date-fns'
 import { Edit, Trash2, Eye, Calendar, MapPin, Users, Car } from 'lucide-react'
+import { TripEditDialog } from './TripEditDialog'
+import { TripDetailDialog } from './TripDetailDialog'
 
 interface TripsListProps {
   searchTerm: string
@@ -57,6 +59,10 @@ export const TripsList = ({
   const [currentPage, setCurrentPage] = useState<number>(TRIPS_LIST_CONSTANTS.DEFAULT_PAGE)
   const [totalPages, setTotalPages] = useState(1)
   const [totalTrips, setTotalTrips] = useState(0)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingTrip, setEditingTrip] = useState<Trip | null>(null)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [viewingTrip, setViewingTrip] = useState<Trip | null>(null)
 
   const tripApi = React.useMemo(() => new TripApi(), [])
 
@@ -122,8 +128,8 @@ export const TripsList = ({
   }
 
   const handleEditTrip = (trip: Trip) => {
-    console.log('Edit trip:', trip)
-    // TODO: Open edit dialog
+    setEditingTrip(trip)
+    setEditDialogOpen(true)
   }
 
   const handleDeleteTrip = async (trip: Trip) => {
@@ -142,9 +148,23 @@ export const TripsList = ({
     }
   }
 
-  const handleViewTrip = (trip: Trip) => {
-    console.log('View trip:', trip)
-    // TODO: Open view dialog
+  const handleViewTrip = async (trip: Trip) => {
+    try {
+      setLoading(true)
+      setError(null)
+      // Fetch full trip detail from API
+      const response = await tripApi.getTripById(trip.tripId)
+      if (response.code === 'SUCCESS' && response.data) {
+        setViewingTrip(response.data)
+        setDetailDialogOpen(true)
+      } else {
+        setError('Failed to load trip details')
+      }
+    } catch (err) {
+      setError('Failed to load trip details')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSeedData = async () => {
@@ -202,150 +222,170 @@ export const TripsList = ({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Trips ({totalTrips})</span>
-          <div className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {trips.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">No trips found</p>
-            <Button onClick={handleSeedData} disabled={loading}>
-              {loading ? 'Seeding...' : 'Seed Sample Data'}
-            </Button>
-          </div>
-        ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Trip ID</TableHead>
-                  <TableHead>Vehicle</TableHead>
-                  <TableHead>Driver</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Stops</TableHead>
-                  <TableHead>Bookings</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {trips.map((trip) => (
-                  <TableRow key={trip.tripId}>
-                    <TableCell className="font-medium">
-                      #{trip.tripId.toString().padStart(4, '0')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Car className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">{trip.vehicle?.licensePlate}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {trip.vehicle?.vehicleType?.name}
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Trips ({totalTrips})</span>
+            <div className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {trips.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">No trips found</p>
+              <Button onClick={handleSeedData} disabled={loading}>
+                {loading ? 'Seeding...' : 'Seed Sample Data'}
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Trip ID</TableHead>
+                    <TableHead>Vehicle</TableHead>
+                    <TableHead>Driver</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Stops</TableHead>
+                    <TableHead>Bookings</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {trips.map((trip) => (
+                    <TableRow key={trip.tripId}>
+                      <TableCell className="font-medium">
+                        #{trip.tripId.toString().padStart(4, '0')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Car className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium">{trip.vehicle?.licensePlate}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {trip.vehicle?.vehicleType?.name}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium">{trip.driver?.name}</div>
-                          <div className="text-sm text-muted-foreground">{trip.driver?.phone}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <div className="font-medium">{trip.driver?.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {trip.driver?.phone}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={getStatusBadgeVariant(trip.status)}
-                        className={getStatusColor(trip.status)}
-                      >
-                        {trip.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span>{trip.tripStops?.length || 0} stops</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          {trip._count?.tripSeats || 0} /{' '}
-                          {trip.vehicle?.vehicleType?.seatCapacity || 0}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{formatDate(trip.createdAt)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleViewTrip(trip)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEditTrip(trip)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteTrip(trip)}
-                          className="text-red-600 hover:text-red-700"
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={getStatusBadgeVariant(trip.status)}
+                          className={getStatusColor(trip.status)}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          {trip.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{trip.tripStops?.length || 0} stops</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span>
+                            {trip._count?.tripSeats || 0} /{' '}
+                            {trip.vehicle?.vehicleType?.seatCapacity || 0}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>{formatDate(trip.createdAt)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleViewTrip(trip)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleEditTrip(trip)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteTrip(trip)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
-                  Showing {(currentPage - 1) * TRIPS_LIST_CONSTANTS.DEFAULT_LIMIT + 1} to{' '}
-                  {Math.min(currentPage * TRIPS_LIST_CONSTANTS.DEFAULT_LIMIT, totalTrips)} of{' '}
-                  {totalTrips} trips
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {(currentPage - 1) * TRIPS_LIST_CONSTANTS.DEFAULT_LIMIT + 1} to{' '}
+                    {Math.min(currentPage * TRIPS_LIST_CONSTANTS.DEFAULT_LIMIT, totalTrips)} of{' '}
+                    {totalTrips} trips
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+      <TripEditDialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open)
+          if (!open) setEditingTrip(null)
+        }}
+        trip={editingTrip}
+      />
+      <TripDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={(open) => {
+          setDetailDialogOpen(open)
+          if (!open) setViewingTrip(null)
+        }}
+        trip={viewingTrip}
+      />
+    </>
   )
 }
