@@ -79,7 +79,7 @@ export default function TripCard({ trip, expandedTripId, setExpandedTripId }: Tr
           tripId: Number(trip.tripId),
           pickupStopId: Number(selectedPickup) || 0, // stopId
           dropoffStopId: Number(selectedDropoff) || 0, // stopId
-          seatNumber: '1',
+          seatNumber: '2',
           price: pricePerSeat,
         }),
       })
