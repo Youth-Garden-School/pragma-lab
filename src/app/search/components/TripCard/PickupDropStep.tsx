@@ -1,14 +1,14 @@
-import { Button } from "@/components/ui/button"
-import React from "react"
-import { Trip, PickupDropPoint, TripStop } from "../../mockTrips"
+import { Button } from '@/components/ui/button'
+import React from 'react'
+import { Trip, PickupDropPoint, TripStop } from '../../mockTrips'
 
 interface PickupDropStepProps {
-  pickupPoints: TripStop[]
-  dropoffPoints: TripStop[]
+  pickupPoints: any[]
+  dropoffPoints: any[]
   selectedPickup: string
   selectedDropoff: string
-  onSelectPickup: (detail: string) => void
-  onSelectDropoff: (detail: string) => void
+  onSelectPickup: (tripStopId: string) => void
+  onSelectDropoff: (tripStopId: string) => void
   onNext: () => void
 }
 
@@ -27,30 +27,40 @@ export default function PickupDropStep({
         <div>
           <p className="font-medium mb-1">Điểm đón</p>
           {pickupPoints.map((point) => (
-            <label key={point.arrivalTime} className="flex items-center gap-2 py-1">
+            <label
+              key={point.tripStopId || point.arrivalTime}
+              className="flex items-center gap-2 py-1"
+            >
               <input
                 type="radio"
                 name="pickup"
-                value={point.location.detail}
-                checked={selectedPickup === point.location.detail}
-                onChange={() => onSelectPickup(point.location.detail || "")}
+                value={point.tripStopId}
+                checked={selectedPickup === String(point.tripStopId)}
+                onChange={() => onSelectPickup(String(point.tripStopId))}
               />
-              <span>{point.arrivalTime} - {point.location.detail}</span>
+              <span>
+                {point.arrivalTime} - {point.location?.detail}
+              </span>
             </label>
           ))}
         </div>
         <div>
           <p className="font-medium mb-1">Điểm trả</p>
           {dropoffPoints.map((point) => (
-            <label key={point.arrivalTime} className="flex items-center gap-2 py-1">
+            <label
+              key={point.tripStopId || point.arrivalTime}
+              className="flex items-center gap-2 py-1"
+            >
               <input
                 type="radio"
                 name="dropoff"
-                value={point.location.detail}
-                checked={selectedDropoff === point.location.detail}
-                onChange={() => onSelectDropoff(point.location.detail || "")}
+                value={point.tripStopId}
+                checked={selectedDropoff === String(point.tripStopId)}
+                onChange={() => onSelectDropoff(String(point.tripStopId))}
               />
-              <span>{point.arrivalTime} - {point.location.detail}</span>
+              <span>
+                {point.arrivalTime} - {point.location?.detail}
+              </span>
             </label>
           ))}
         </div>

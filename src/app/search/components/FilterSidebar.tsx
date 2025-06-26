@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button"
-import React from "react"
-import { Location, filterOptions } from "../mockdata"
+import { Button } from '@/components/ui/button'
+import React from 'react'
+import { Location, filterOptions } from '../mockdata'
 
 type Props = {
   selectedDepartureTimes: string[]
@@ -8,8 +8,8 @@ type Props = {
   selectedSeatPositions: string[]
   selectedPickupPoints: string[]
   selectedDropoffPoints: string[]
-  pickupFilterPoints: Location[]
-  dropoffFilterPoints: Location[]
+  pickupFilterPoints: any[]
+  dropoffFilterPoints: any[]
   onToggle: (item: string, list: string[], setList: (val: string[]) => void) => void
   clearAll: () => void
   setSelectedDepartureTimes: (val: string[]) => void
@@ -41,7 +41,11 @@ export default function TripFilterSidebar({
         <div className="bg-gray-100 px-4 py-2 flex-1">
           <h2 className="text-lg font-semibold">Lọc</h2>
         </div>
-        {(selectedDepartureTimes.length || selectedVehicleTypes.length || selectedSeatPositions.length || selectedPickupPoints.length || selectedDropoffPoints.length) > 0 && (
+        {(selectedDepartureTimes.length ||
+          selectedVehicleTypes.length ||
+          selectedSeatPositions.length ||
+          selectedPickupPoints.length ||
+          selectedDropoffPoints.length) > 0 && (
           <button
             onClick={clearAll}
             className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
@@ -57,8 +61,12 @@ export default function TripFilterSidebar({
           {filterOptions.departureTimes.map((opt) => (
             <Button
               key={opt}
-              variant={selectedDepartureTimes.includes(opt) ? "default" : "outline"}
-              className={selectedDepartureTimes.includes(opt) ? "bg-cyan-400 text-white hover:bg-cyan-400" : "bg-gray-100 hover:bg-gray-200"}
+              variant={selectedDepartureTimes.includes(opt) ? 'default' : 'outline'}
+              className={
+                selectedDepartureTimes.includes(opt)
+                  ? 'bg-cyan-400 text-white hover:bg-cyan-400'
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }
               onClick={() => onToggle(opt, selectedDepartureTimes, setSelectedDepartureTimes)}
             >
               {opt}
