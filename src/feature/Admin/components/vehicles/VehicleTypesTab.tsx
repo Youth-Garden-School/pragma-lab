@@ -201,6 +201,7 @@ export const VehicleTypesTab = () => {
         onOpenChange={setIsDialogOpen}
         vehicleType={editingVehicleType}
         onSuccess={handleDialogSuccess}
+        vehicleTypes={vehicleTypes}
       />
     </>
   )

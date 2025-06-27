@@ -1,4 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/pages/api/auth/[...nextauth]'
 import { ApiResponseBuilder } from '@/shared/utils/ApiResponseBuilder'
 import prisma from '@/configs/prisma/prisma'
 import bcrypt from 'bcrypt'
@@ -15,10 +17,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .build(),
       )
   }
+
   try {
-    // TODO: Lấy userId từ session, tạm hardcode userId = 1
-    const userId = 1
+    // Lấy session từ NextAuth
+    const session = await getServerSession(req, res, authOptions)
+
+    if (!session || !session.user) {
+      return res
+        .status(401)
+        .json(
+          new ApiResponseBuilder()
+            .setStatusCode(401)
+            .setCode('UNAUTHORIZED')
+            .setMessage('Bạn cần đăng nhập để thực hiện chức năng này')
+            .build(),
+        )
+    }
+
+    // Lấy userId từ session
+    const userId = session.user.id
     const { currentPassword, newPassword } = req.body
+
+    // Validate input
     if (!currentPassword || !newPassword) {
       return res
         .status(400)
@@ -30,7 +50,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .build(),
         )
     }
-    const user = await prisma.users.findUnique({ where: { userId } })
+
+    // Validate password strength
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponseBuilder()
+            .setStatusCode(400)
+            .setCode('BAD_REQUEST')
+            .setMessage('Mật khẩu mới phải có ít nhất 6 ký tự')
+            .build(),
+        )
+    }
+
+    // Kiểm tra mật khẩu mới không giống mật khẩu cũ
+    if (currentPassword === newPassword) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponseBuilder()
+            .setStatusCode(400)
+            .setCode('BAD_REQUEST')
+            .setMessage('Mật khẩu mới phải khác mật khẩu hiện tại')
+            .build(),
+        )
+    }
+
+    // Tìm user theo userId từ session
+    const user = await prisma.users.findUnique({
+      where: { userId: typeof userId === 'string' ? parseInt(userId) : userId },
+    })
+
     if (!user) {
       return res
         .status(404)
@@ -42,7 +93,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .build(),
         )
     }
-    const isMatch = await bcrypt.compare(currentPassword, user.password || '')
+
+    // Verify current password
+    if (!user.password) {
+      return res
+        .status(400)
+        .json(
+          new ApiResponseBuilder()
+            .setStatusCode(400)
+            .setCode('BAD_REQUEST')
+            .setMessage('Tài khoản này chưa thiết lập mật khẩu')
+            .build(),
+        )
+    }
+    const isMatch = await bcrypt.compare(currentPassword, user.password)
     if (!isMatch) {
       return res
         .status(401)
@@ -54,11 +118,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .build(),
         )
     }
+
+    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12)
+
+    // Update password
     await prisma.users.update({
-      where: { userId },
-      data: { password: hashedPassword },
+      where: { userId: typeof userId === 'string' ? parseInt(userId) : userId },
+      data: {
+        password: hashedPassword,
+      },
     })
+
     return res
       .status(200)
       .json(
@@ -69,6 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .build(),
       )
   } catch (error) {
+    console.error('Change password error:', error)
     return res
       .status(500)
       .json(

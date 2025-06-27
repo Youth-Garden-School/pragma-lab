@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,11 +43,13 @@ export const VehicleDialog = ({
     },
   })
 
+  const [loading, setLoading] = useState(false)
+
   React.useEffect(() => {
     if (vehicle) {
       form.reset({
         licensePlate: vehicle.licensePlate,
-        vehicleTypeId: vehicle.vehicleTypeId?.toString() || '',
+        vehicleTypeId: vehicle.vehicleTypeId.toString(),
       })
     } else {
       form.reset({
@@ -58,40 +60,50 @@ export const VehicleDialog = ({
   }, [vehicle, form])
 
   const onSubmit = async (data: any) => {
+    setLoading(true)
     try {
+      let response, result
       if (vehicle) {
-        // Update
-        const res = await fetch(`/api/vehicles/${vehicle.vehicleId}`, {
+        // Update vehicle
+        response = await fetch(`/api/vehicles/${vehicle.vehicleId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            licensePlate: data.licensePlate,
+            vehicleTypeId: data.vehicleTypeId,
+          }),
         })
-        const result = await res.json()
-        if (result.success) {
-          toast.success('Vehicle updated successfully')
+        result = await response.json()
+        if (response.ok && result.success) {
+          toast.success(result.message || 'Vehicle updated successfully')
           onOpenChange(false)
           onSuccess && onSuccess()
         } else {
-          toast.error(result.error || 'Update failed')
+          toast.error(result.error || 'Failed to update vehicle')
         }
       } else {
-        // Create
-        const res = await fetch('/api/vehicles', {
+        // Create vehicle
+        response = await fetch('/api/vehicles', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            licensePlate: data.licensePlate,
+            vehicleTypeId: data.vehicleTypeId,
+          }),
         })
-        const result = await res.json()
-        if (result.success) {
-          toast.success('Vehicle created successfully')
+        result = await response.json()
+        if (response.ok && result.success) {
+          toast.success(result.message || 'Vehicle created successfully')
           onOpenChange(false)
           onSuccess && onSuccess()
         } else {
-          toast.error(result.error || 'Create failed')
+          toast.error(result.error || 'Failed to create vehicle')
         }
       }
-    } catch (e) {
-      toast.error('Request failed')
+    } catch (error) {
+      toast.error('An error occurred. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -130,7 +142,7 @@ export const VehicleDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {vehicleTypes.map((type) => (
+                      {(vehicleTypes || []).map((type) => (
                         <SelectItem key={type.vehicleTypeId} value={type.vehicleTypeId.toString()}>
                           {type.name}
                         </SelectItem>
@@ -146,7 +158,9 @@ export const VehicleDialog = ({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">{vehicle ? 'Update' : 'Create'} Vehicle</Button>
+              <Button type="submit" disabled={loading}>
+                {vehicle ? 'Update' : 'Create'} Vehicle
+              </Button>
             </div>
           </form>
         </Form>

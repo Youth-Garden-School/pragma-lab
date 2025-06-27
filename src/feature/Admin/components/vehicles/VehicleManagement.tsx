@@ -4,21 +4,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VehicleTypesTab } from './VehicleTypesTab';
 import { VehiclesTab } from './VehiclesTab';
 import { SeatConfigurationTab } from './SeatConfigurationTab';
-import { VehicleWorkflowGuide } from './VehicleWorkflowGuide';
 
 export const VehicleManagement = () => {
   return (
-    <Tabs defaultValue="workflow" className="space-y-4">
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="workflow">Workflow Guide</TabsTrigger>
+    <Tabs defaultValue="types" className="space-y-4">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="types">Vehicle Types</TabsTrigger>
         <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
         <TabsTrigger value="seats">Seat Configuration</TabsTrigger>
       </TabsList>
-      
-      <TabsContent value="workflow">
-        <VehicleWorkflowGuide />
-      </TabsContent>
       
       <TabsContent value="types">
         <VehicleTypesTab />
@@ -34,4 +28,3 @@ export const VehicleManagement = () => {
     </Tabs>
   );
 };
-

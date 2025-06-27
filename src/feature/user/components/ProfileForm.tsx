@@ -57,6 +57,7 @@ type ProfileFormData = z.infer<typeof profileSchema>
 export const ProfileForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [initialData, setInitialData] = useState<ProfileFormData | null>(null)
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -68,6 +69,22 @@ export const ProfileForm: React.FC = () => {
       dateOfBirth: undefined,
     },
   })
+
+  // Hàm so sánh dữ liệu để kiểm tra có thay đổi hay không
+  const hasDataChanged = (currentData: ProfileFormData, originalData: ProfileFormData): boolean => {
+    const normalizeDate = (date: Date | undefined) => {
+      if (!date) return null
+      return format(date, 'yyyy-MM-dd')
+    }
+
+    return (
+      currentData.name.trim() !== originalData.name.trim() ||
+      currentData.email.trim() !== originalData.email.trim() ||
+      currentData.phone.trim() !== originalData.phone.trim() ||
+      currentData.address.trim() !== originalData.address.trim() ||
+      normalizeDate(currentData.dateOfBirth) !== normalizeDate(originalData.dateOfBirth)
+    )
+  }
 
   // Load user profile - tương tự như fetchUsers trong UsersList
   useEffect(() => {
@@ -85,14 +102,20 @@ export const ProfileForm: React.FC = () => {
 
         setUserProfile(profile)
 
-        // Reset form với dữ liệu từ API
-        form.reset({
-          name: profile.name,
-          email: profile.email,
-          phone: profile.phone,
-          address: profile.address,
+        // Chuẩn bị dữ liệu form
+        const formData: ProfileFormData = {
+          name: profile.name || '',
+          email: profile.email || '',
+          phone: profile.phone || '',
+          address: profile.address || '',
           dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : undefined,
-        })
+        }
+
+        // Lưu dữ liệu ban đầu để so sánh
+        setInitialData(formData)
+
+        // Reset form với dữ liệu từ API
+        form.reset(formData)
       } catch (error: any) {
         console.error('Error loading profile:', error)
         toast.error(error.message || 'Không thể tải dữ liệu hồ sơ')
@@ -106,19 +129,46 @@ export const ProfileForm: React.FC = () => {
 
   // Update profile - tương tự như updateUser trong UserDialog
   const onSubmit = async (data: ProfileFormData) => {
-    if (!userProfile) return
+    if (!userProfile || !initialData) return
 
     try {
+      // Kiểm tra xem có thay đổi gì không
+      if (!hasDataChanged(data, initialData)) {
+        toast.info('Không có thay đổi nào để lưu')
+        return
+      }
+
       setIsLoading(true)
 
-      const updateData = {
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        dateOfBirth: data.dateOfBirth,
+      // Chuẩn bị dữ liệu update - chỉ gửi những field đã thay đổi
+      const updateData: Partial<UserProfile> = {
+        userId: userProfile.userId,
         role: userProfile.role, // Giữ nguyên role hiện tại
       }
+
+      // Chỉ thêm các field đã thay đổi
+      if (data.name.trim() !== initialData.name.trim()) {
+        updateData.name = data.name.trim()
+      }
+      if (data.email.trim() !== initialData.email.trim()) {
+        updateData.email = data.email.trim()
+      }
+      if (data.phone.trim() !== initialData.phone.trim()) {
+        updateData.phone = data.phone.trim()
+      }
+      if (data.address.trim() !== initialData.address.trim()) {
+        updateData.address = data.address.trim()
+      }
+
+      // Xử lý ngày sinh riêng biệt
+      const currentDateStr = data.dateOfBirth ? format(data.dateOfBirth, 'yyyy-MM-dd') : null
+      const originalDateStr = initialData.dateOfBirth ? format(initialData.dateOfBirth, 'yyyy-MM-dd') : null
+      
+      if (currentDateStr !== originalDateStr) {
+        updateData.dateOfBirth = data.dateOfBirth
+      }
+
+      console.log('Sending update data:', updateData)
 
       const res = await fetch(`/api/users/${userProfile.userId}`, {
         method: 'PUT',
@@ -129,13 +179,29 @@ export const ProfileForm: React.FC = () => {
       })
 
       if (!res.ok) {
-        throw new Error('Failed to update profile')
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP ${res.status}: ${res.statusText}`)
       }
 
-      const updatedData = await res.json()
-      const updatedProfile = updatedData.data || updatedData
+      const responseData = await res.json()
+      const updatedProfile = responseData.data || responseData
 
+      // Cập nhật state với dữ liệu mới
       setUserProfile(updatedProfile)
+      
+      // Cập nhật dữ liệu ban đầu để so sánh lần sau
+      const newFormData: ProfileFormData = {
+        name: updatedProfile.name || '',
+        email: updatedProfile.email || '',
+        phone: updatedProfile.phone || '',
+        address: updatedProfile.address || '',
+        dateOfBirth: updatedProfile.dateOfBirth ? new Date(updatedProfile.dateOfBirth) : undefined,
+      }
+      setInitialData(newFormData)
+
+      // Reset form với dữ liệu mới
+      form.reset(newFormData)
+
       toast.success('Cập nhật hồ sơ thành công')
     } catch (error: any) {
       console.error('Error updating profile:', error)
@@ -146,17 +212,15 @@ export const ProfileForm: React.FC = () => {
   }
 
   const handleCancel = () => {
-    if (userProfile) {
-      form.reset({
-        name: userProfile.name,
-        email: userProfile.email,
-        phone: userProfile.phone,
-        address: userProfile.address,
-        dateOfBirth: userProfile.dateOfBirth ? new Date(userProfile.dateOfBirth) : undefined,
-      })
+    if (initialData) {
+      form.reset(initialData)
       toast.info('Đã hủy thay đổi')
     }
   }
+
+  // Kiểm tra xem form có thay đổi không để enable/disable nút
+  const watchedValues = form.watch()
+  const isFormChanged = initialData ? hasDataChanged(watchedValues, initialData) : false
 
   // Loading state tương tự UsersList
   if (isLoading && !userProfile) {
@@ -301,10 +365,18 @@ export const ProfileForm: React.FC = () => {
             />
 
             <div className="flex justify-end gap-4 pt-6">
-              <Button type="button" variant="outline" onClick={handleCancel} disabled={isLoading}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleCancel} 
+                disabled={isLoading || !isFormChanged}
+              >
                 Hủy
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button 
+                type="submit" 
+                disabled={isLoading || !isFormChanged}
+              >
                 {isLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
               </Button>
             </div>

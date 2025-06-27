@@ -138,6 +138,8 @@ async function updateUser(req: NextApiRequest, res: NextApiResponse, userId: num
   try {
     const { phone, dateOfBirth, name, email, address, password, role } = req.body
 
+    console.log('Update request data:', { userId, body: req.body })
+
     // Validate at least one field to update
     if (
       phone === undefined &&
@@ -176,48 +178,95 @@ async function updateUser(req: NextApiRequest, res: NextApiResponse, userId: num
         )
     }
 
-    // Check for email/phone conflicts with other users
-    if (email || phone) {
+    // FIXED: Check for email/phone conflicts with other users - chỉ check khi có thay đổi thực sự
+    const conflictConditions = []
+    
+    // Chỉ check email nếu email được cung cấp VÀ khác với email hiện tại
+    if (email && email.trim() !== '' && email !== existingUser.email) {
+      conflictConditions.push({ email: email.trim() })
+    }
+    
+    // Chỉ check phone nếu phone được cung cấp VÀ khác với phone hiện tại
+    if (phone && phone.trim() !== '' && phone !== existingUser.phone) {
+      conflictConditions.push({ phone: phone.trim() })
+    }
+
+    // Chỉ thực hiện conflict check nếu có điều kiện để check
+    if (conflictConditions.length > 0) {
+      console.log('Checking conflicts for:', conflictConditions)
+      
       const conflictUser = await prisma.users.findFirst({
         where: {
           AND: [
             { userId: { not: userId } },
             {
-              OR: [email ? { email } : {}, phone ? { phone } : {}].filter(
-                (obj) => Object.keys(obj).length > 0,
-              ),
+              OR: conflictConditions
             },
           ],
         },
       })
 
       if (conflictUser) {
+        console.log('Conflict found:', conflictUser)
+        
+        // Xác định trường nào bị conflict
+        let conflictMessage = 'Đã được sử dụng bởi người dùng khác: '
+        const conflicts = []
+        
+        if (email && email === conflictUser.email) {
+          conflicts.push('Email')
+        }
+        if (phone && phone === conflictUser.phone) {
+          conflicts.push('Số điện thoại')
+        }
+        
+        conflictMessage += conflicts.join(', ')
+
         return res
           .status(409)
           .json(
             new ApiResponseBuilder()
               .setStatusCode(409)
               .setCode('CONFLICT')
-              .setMessage('Email hoặc số điện thoại đã được sử dụng bởi người dùng khác')
+              .setMessage(conflictMessage)
               .build(),
           )
       }
     }
 
-    // Prepare update data
+    // Prepare update data - chỉ update những field thực sự có giá trị
     const updateData: any = {}
-    if (phone !== undefined) updateData.phone = phone
-    if (dateOfBirth !== undefined)
+    
+    if (phone !== undefined && phone !== null) {
+      updateData.phone = phone.trim()
+    }
+    
+    if (dateOfBirth !== undefined) {
       updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
-    if (name !== undefined) updateData.name = name
-    if (email !== undefined) updateData.email = email
-    if (address !== undefined) updateData.address = address
-    if (role !== undefined) updateData.role = role
+    }
+    
+    if (name !== undefined && name !== null) {
+      updateData.name = name.trim()
+    }
+    
+    if (email !== undefined && email !== null) {
+      updateData.email = email.trim()
+    }
+    
+    if (address !== undefined && address !== null) {
+      updateData.address = address.trim()
+    }
+    
+    if (role !== undefined && role !== null) {
+      updateData.role = role
+    }
 
     // Hash new password if provided
-    if (password) {
-      updateData.password = await bcrypt.hash(password, 12)
+    if (password && password.trim() !== '') {
+      updateData.password = await bcrypt.hash(password.trim(), 12)
     }
+
+    console.log('Final update data:', updateData)
 
     const updatedUser = await prisma.users.update({
       where: { userId },
@@ -232,6 +281,8 @@ async function updateUser(req: NextApiRequest, res: NextApiResponse, userId: num
         role: true,
       },
     })
+
+    console.log('User updated successfully:', updatedUser)
 
     return res
       .status(200)
