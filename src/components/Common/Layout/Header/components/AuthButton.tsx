@@ -1,13 +1,18 @@
+'use client'
 import { useSession, signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { Icons } from '@/components/Common/Icon'
 import { authService } from '@/feature/Authentication/services/authService'
+import React, { useEffect, useState } from 'react'
 
 interface AuthButtonProps {
   onLoginClick?: () => void
@@ -16,6 +21,29 @@ interface AuthButtonProps {
 
 export function AuthButton({ onLoginClick, className = '' }: AuthButtonProps) {
   const { data: session, status } = useSession()
+  const router = useRouter()
+  const [role, setRole] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (session) {
+        try {
+          const res = await fetch('/api/users/me')
+          if (res.ok) {
+            const data = await res.json()
+            setRole(data?.data?.role || null)
+          } else {
+            setRole(null)
+          }
+        } catch (e) {
+          setRole(null)
+        }
+      } else {
+        setRole(null)
+      }
+    }
+    fetchUserRole()
+  }, [session])
 
   const handleLogout = async () => {
     try {
@@ -23,6 +51,10 @@ export function AuthButton({ onLoginClick, className = '' }: AuthButtonProps) {
     } catch (error) {
       console.error('Logout failed:', error)
     }
+  }
+
+  const handleNavigate = (path: string) => {
+    router.push(path)
   }
 
   if (status === 'loading') {
@@ -53,13 +85,43 @@ export function AuthButton({ onLoginClick, className = '' }: AuthButtonProps) {
             </div>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-white border border-gray-200 shadow-lg min-w-[140px]">
+        <DropdownMenuContent className="bg-white border border-gray-200 shadow-lg min-w-[180px] rounded-lg p-1">
+          <DropdownMenuLabel className="px-3 py-2 text-sm font-medium text-gray-900 border-b border-gray-100">
+            My Account
+          </DropdownMenuLabel>
+          {role === 'admin' && (
+            <DropdownMenuItem
+              className="flex items-center space-x-3 px-3 py-2.5 hover:bg-gray-50 text-gray-700 cursor-pointer rounded-md mx-1 my-0.5"
+              onClick={() => handleNavigate('/admin')}
+            >
+              <Icons.car className="w-4 h-4 text-gray-500" />
+              <span className="text-sm">BusAdmin</span>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
-            className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 text-red-600"
+            className="flex items-center space-x-3 px-3 py-2.5 hover:bg-gray-50 text-gray-700 cursor-pointer rounded-md mx-1 my-0.5"
+            onClick={() => handleNavigate('/profile')}
+          >
+            <Icons.user className="w-4 h-4 text-gray-500" />
+            <span className="text-sm">Hồ sơ</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            className="flex items-center space-x-3 px-3 py-2.5 hover:bg-gray-50 text-gray-700 cursor-pointer rounded-md mx-1 my-0.5"
+            onClick={() => handleNavigate('/settings')}
+          >
+            <Icons.settings className="w-4 h-4 text-gray-500" />
+            <span className="text-sm">Cài đặt</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator className="my-1 border-gray-100" />
+
+          <DropdownMenuItem
+            className="flex items-center space-x-3 px-3 py-2.5 hover:bg-gray-50 text-gray-700 cursor-pointer rounded-md mx-1 my-0.5"
             onClick={handleLogout}
           >
-            <Icons.login className="w-4 h-4" />
-            <span>Đăng xuất</span>
+            <Icons.login className="w-4 h-4 text-gray-500" />
+            <span className="text-sm">Đăng xuất</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
