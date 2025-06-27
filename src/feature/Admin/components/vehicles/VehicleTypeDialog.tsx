@@ -13,12 +13,12 @@ import {
 } from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
-import { 
-  SEAT_LAYOUT_TEMPLATES, 
-  SEAT_CONFIG_DEFAULTS, 
+import {
+  SEAT_LAYOUT_TEMPLATES,
+  SEAT_CONFIG_DEFAULTS,
   SEAT_VALIDATION_RULES,
   SUCCESS_MESSAGES,
-  SEAT_API_ERRORS
+  SEAT_API_ERRORS,
 } from '@/shared/constants/seatConstants'
 
 interface VehicleTypeDialogProps {
@@ -26,6 +26,7 @@ interface VehicleTypeDialogProps {
   onOpenChange: (open: boolean) => void
   vehicleType?: any
   onSuccess?: () => void
+  vehicleTypes?: any[]
 }
 
 export const VehicleTypeDialog = ({
@@ -33,6 +34,7 @@ export const VehicleTypeDialog = ({
   onOpenChange,
   vehicleType,
   onSuccess,
+  vehicleTypes = [],
 }: VehicleTypeDialogProps) => {
   const form = useForm({
     defaultValues: vehicleType || {
@@ -66,8 +68,10 @@ export const VehicleTypeDialog = ({
     }
 
     // Validate seat capacity
-    if (formattedData.seatCapacity < SEAT_VALIDATION_RULES.CAPACITY_MIN || 
-        formattedData.seatCapacity > SEAT_VALIDATION_RULES.CAPACITY_MAX) {
+    if (
+      formattedData.seatCapacity < SEAT_VALIDATION_RULES.CAPACITY_MIN ||
+      formattedData.seatCapacity > SEAT_VALIDATION_RULES.CAPACITY_MAX
+    ) {
       toast.error(SEAT_API_ERRORS.INVALID_CAPACITY)
       return
     }
@@ -115,16 +119,16 @@ export const VehicleTypeDialog = ({
   const createSeatConfigurations = async (vehicleTypeId: number, seatCapacity: number) => {
     try {
       const seatConfigurations = generateSeatLayout(seatCapacity)
-      
+
       const res = await fetch('/api/seat-configurations/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vehicleTypeId,
-          seatConfigurations
+          seatConfigurations,
         }),
       })
-      
+
       const result = await res.json()
       if (!result.success) {
         console.warn('Failed to auto-create seat configurations:', result.error)
@@ -140,8 +144,9 @@ export const VehicleTypeDialog = ({
   const generateSeatLayout = (capacity: number) => {
     try {
       // Determine template based on capacity
-      let template: typeof SEAT_LAYOUT_TEMPLATES[keyof typeof SEAT_LAYOUT_TEMPLATES] = SEAT_LAYOUT_TEMPLATES.STANDARD_BUS
-      
+      let template: (typeof SEAT_LAYOUT_TEMPLATES)[keyof typeof SEAT_LAYOUT_TEMPLATES] =
+        SEAT_LAYOUT_TEMPLATES.STANDARD_BUS
+
       if (capacity <= 25) {
         template = SEAT_LAYOUT_TEMPLATES.LIMOUSINE
       } else if (capacity <= 35) {
@@ -153,7 +158,7 @@ export const VehicleTypeDialog = ({
       const seats = []
       const columns = template.columns
       const rows = Math.ceil(capacity / columns)
-      
+
       for (let row = 1; row <= rows; row++) {
         for (let col = 1; col <= columns; col++) {
           if (seats.length < capacity) {
@@ -161,12 +166,12 @@ export const VehicleTypeDialog = ({
               seatNumber: template.seatNumberFormat(row, col),
               rowNumber: row,
               columnNumber: col,
-              isAvailable: SEAT_CONFIG_DEFAULTS.DEFAULT_AVAILABILITY
+              isAvailable: SEAT_CONFIG_DEFAULTS.DEFAULT_AVAILABILITY,
             })
           }
         }
       }
-      
+
       return seats
     } catch (error) {
       console.error('Failed to generate seat layout:', error)
@@ -203,12 +208,12 @@ export const VehicleTypeDialog = ({
                 <FormItem>
                   <FormLabel>Seat Capacity</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="Enter seat capacity" 
+                    <Input
+                      type="number"
+                      placeholder="Enter seat capacity"
                       min={SEAT_VALIDATION_RULES.CAPACITY_MIN}
                       max={SEAT_VALIDATION_RULES.CAPACITY_MAX}
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

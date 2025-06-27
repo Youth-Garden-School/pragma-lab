@@ -109,7 +109,7 @@ export default function SearchPage() {
           setPickupPointId={(id: string | number) => setPickupPointId(String(id))}
           setDropoffPointId={(id: string | number) => setDropoffPointId(String(id))}
         />
-        {loadingLocations && <div>Đang tải điểm dừng...</div>}
+
         {errorLocations && <div className="text-red-500">{errorLocations}</div>}
       </div>
       <div className="flex max-w-6xl mx-auto gap-6 pb-10">

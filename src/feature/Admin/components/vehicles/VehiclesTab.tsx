@@ -43,7 +43,7 @@ export const VehiclesTab = () => {
     try {
       const res = await fetch('/api/vehicletypes')
       const data = await res.json()
-      if (data.success) {
+      if (data.code === 'SUCCESS') {
         setVehicleTypes(data.data)
       }
     } catch (e) {}
@@ -158,7 +158,6 @@ export const VehiclesTab = () => {
         onOpenChange={setIsDialogOpen}
         vehicle={editingVehicle}
         vehicleTypes={vehicleTypes}
-        onSuccess={handleDialogSuccess}
       />
     </>
   )
