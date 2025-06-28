@@ -28,7 +28,8 @@
     "seed": "dotenv -e .env.development.local -- npx prisma db seed",
     "generate": "dotenv -e .env.development.local -- npx prisma generate",
     "prisma": "dotenv -e .env.development.local npx prisma db pull && npx prisma generate",
-    "push": "dotenv -e .env.development.local -- npx prisma db push"
+    "push": "dotenv -e .env.development.local -- npx prisma db push",
+    "postinstall": "npx prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
