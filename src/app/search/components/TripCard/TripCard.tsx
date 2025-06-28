@@ -164,7 +164,6 @@ export default function TripCard({ trip, expandedTripId, setExpandedTripId }: Tr
                 <div className="flex-1 border-t border-dashed border-gray-300 relative">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="bg-white px-2 text-xs text-gray-500">
-                      {Math.floor(Math.random() * 3 + 6)}h {Math.floor(Math.random() * 60)}m
                     </div>
                   </div>
                 </div>
@@ -202,7 +201,6 @@ export default function TripCard({ trip, expandedTripId, setExpandedTripId }: Tr
                 </div>
               </div>
               <div className="flex items-center justify-end gap-1 text-2xl font-bold text-[#06b6d4]">
-                <DollarSign className="w-5 h-5" />
                 <span>{formatPrice(pricePerSeat)}đ</span>
               </div>
             </div>
