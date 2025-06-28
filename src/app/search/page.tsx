@@ -9,12 +9,12 @@ import SortOptions from './components/SortOptions'
 import TripCard from './components/TripCard/TripCard'
 
 import { useState, useEffect } from 'react'
-import { useLocations } from '@/hooks/use-locations'
+import { SEARCH_CONSTANTS } from '@/shared/constants/searchConstants'
 
 export default function SearchPage() {
   const [departureDate, setDepartureDate] = useState(new Date())
-  const [adultCount, setAdultCount] = useState(1)
-  const [childCount, setChildCount] = useState(0)
+  const [adultCount, setAdultCount] = useState<number>(SEARCH_CONSTANTS.DEFAULT_ADULT_COUNT)
+  const [childCount, setChildCount] = useState<number>(SEARCH_CONSTANTS.DEFAULT_CHILD_COUNT)
   const totalTickets = adultCount + childCount
 
   const [pickupPointId, setPickupPointId] = useState('')
@@ -29,17 +29,14 @@ export default function SearchPage() {
   const [expandedTripId, setExpandedTripId] = useState<string | null>(null)
 
   const [trips, setTrips] = useState<any[]>([])
-
-  // Sử dụng hook useLocations để lấy danh sách điểm dừng
-  const { locations: stopPoints, loading: loadingLocations, error: errorLocations } = useLocations()
+  const [loadingTrips, setLoadingTrips] = useState(false)
 
   const fetchTrips = async () => {
-    // Chỉ gọi API lấy chuyến đi nếu có điểm đón và trả
     if (!pickupPointId || !dropoffPointId) {
       setTrips([])
       return
     }
-
+    setLoadingTrips(true)
     try {
       const params: any = {
         departureDate: departureDate.toISOString().split('T')[0],
@@ -52,6 +49,8 @@ export default function SearchPage() {
       setTrips(data.data?.items || [])
     } catch (err: any) {
       console.error(err)
+    } finally {
+      setLoadingTrips(false)
     }
   }
 
@@ -79,7 +78,7 @@ export default function SearchPage() {
     setSelectedDropoffPoints([])
   }
 
-  const dateOptions = Array.from({ length: 5 }, (_, i) => {
+  const dateOptions = Array.from({ length: SEARCH_CONSTANTS.DATE_OPTIONS_COUNT }, (_, i) => {
     const date = new Date()
     date.setDate(date.getDate() + i)
     return date
@@ -89,7 +88,6 @@ export default function SearchPage() {
     return dateOptions.findIndex((d) => d.toDateString() === departureDate.toDateString())
   })
 
-  const sortOptions = ['Giờ đi sớm nhất', 'Giờ đi muộn nhất', 'Giá tăng dần', 'Giá giảm dần']
   const [activeSort, setActiveSort] = useState<string | null>(null)
 
   return (
@@ -97,7 +95,6 @@ export default function SearchPage() {
       <Header />
       <div className="pt-[60px] pb-[60px] max-w-6xl mx-auto space-y-8">
         <SearchForm
-          stopPoints={stopPoints}
           departureDate={departureDate}
           setDepartureDate={setDepartureDate}
           adultCount={adultCount}
@@ -109,8 +106,6 @@ export default function SearchPage() {
           setPickupPointId={(id: string | number) => setPickupPointId(String(id))}
           setDropoffPointId={(id: string | number) => setDropoffPointId(String(id))}
         />
-
-        {errorLocations && <div className="text-red-500">{errorLocations}</div>}
       </div>
       <div className="flex max-w-6xl mx-auto gap-6 pb-10">
         <FilterSidebar
@@ -119,18 +114,8 @@ export default function SearchPage() {
           selectedSeatPositions={selectedSeatPositions}
           selectedPickupPoints={selectedPickupPoints}
           selectedDropoffPoints={selectedDropoffPoints}
-          pickupFilterPoints={stopPoints.filter(
-            (p) =>
-              p.locationId === Number(pickupPointId) ||
-              p.province ===
-                stopPoints.find((s) => s.locationId === Number(pickupPointId))?.province,
-          )}
-          dropoffFilterPoints={stopPoints.filter(
-            (p) =>
-              p.locationId === Number(dropoffPointId) ||
-              p.province ===
-                stopPoints.find((s) => s.locationId === Number(dropoffPointId))?.province,
-          )}
+          pickupFilterPoints={[]}
+          dropoffFilterPoints={[]}
           onToggle={onToggle}
           clearAll={clearAll}
           setSelectedDepartureTimes={setSelectedDepartureTimes}
@@ -152,20 +137,25 @@ export default function SearchPage() {
             setActiveDateIndex={setActiveDateIndex}
           />
           <SortOptions
-            sortOptions={sortOptions}
+            sortOptions={[...SEARCH_CONSTANTS.SORT_OPTIONS]}
             activeSort={activeSort}
             setActiveSort={setActiveSort}
           />
 
-          {trips.length === 0 && !loadingLocations && <div>Không có chuyến nào phù hợp.</div>}
-          {trips.map((trip) => (
-            <TripCard
-              key={trip.tripId}
-              trip={trip}
-              expandedTripId={expandedTripId}
-              setExpandedTripId={setExpandedTripId}
-            />
-          ))}
+          {loadingTrips ? (
+            <div className="text-center py-8 text-blue-500 font-semibold">Đang tìm chuyến...</div>
+          ) : trips.length === 0 ? (
+            <div>Không có chuyến nào phù hợp.</div>
+          ) : (
+            trips.map((trip) => (
+              <TripCard
+                key={trip.tripId}
+                trip={trip}
+                expandedTripId={expandedTripId}
+                setExpandedTripId={setExpandedTripId}
+              />
+            ))
+          )}
         </div>
       </div>
       <Footer />
