@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 async function getTrips(req: NextApiRequest, res: NextApiResponse) {
-  const { page = '1', limit = '10', status, vehicleId } = req.query
+  const { page = '1', limit = '10', status, vehicleId, pickupPointId, dropoffPointId } = req.query
 
   try {
     const pageNum = parseInt(page as string)
@@ -47,11 +47,15 @@ async function getTrips(req: NextApiRequest, res: NextApiResponse) {
     if (status) where.status = status
     if (vehicleId) where.vehicleId = parseInt(vehicleId as string)
 
-    console.log('Querying trips with params:', { pageNum, limitNum, skip, where })
-
-    // Test database connection first
-    const totalCount = await prisma.trips.count()
-    console.log('Total trips in database:', totalCount)
+    // Nếu có cả pickupPointId và dropoffPointId thì filter theo route
+    if (pickupPointId && dropoffPointId) {
+      where.tripStops = {
+        some: {
+          locationId: parseInt(pickupPointId as string),
+          isPickup: true,
+        },
+      }
+    }
 
     const [trips, total] = await Promise.all([
       prisma.trips.findMany({
@@ -97,7 +101,22 @@ async function getTrips(req: NextApiRequest, res: NextApiResponse) {
       prisma.trips.count({ where }),
     ])
 
-    console.log(`Found ${trips.length} trips out of ${total} total`)
+    // Nếu có cả pickupPointId và dropoffPointId thì lọc lại ở backend
+    let filteredTrips = trips
+    if (pickupPointId && dropoffPointId) {
+      const pickupId = parseInt(pickupPointId as string)
+      const dropoffId = parseInt(dropoffPointId as string)
+      filteredTrips = trips.filter((trip) => {
+        const pickupStop = trip.tripStops.find(
+          (s) => s.locationId === pickupId && s.isPickup === true,
+        )
+        const dropoffStop = trip.tripStops.find(
+          (s) => s.locationId === dropoffId && s.isPickup === false,
+        )
+        // Phải có cả pickup và dropoff, và pickup phải trước dropoff
+        return pickupStop && dropoffStop && pickupStop.stopOrder < dropoffStop.stopOrder
+      })
+    }
 
     const totalPages = Math.ceil(total / limitNum)
 
@@ -107,8 +126,8 @@ async function getTrips(req: NextApiRequest, res: NextApiResponse) {
         .setCode('SUCCESS')
         .setMessage('Trips retrieved successfully')
         .setData({
-          items: trips,
-          total,
+          items: filteredTrips,
+          total: filteredTrips.length,
           page: pageNum,
           limit: limitNum,
           totalPages,
