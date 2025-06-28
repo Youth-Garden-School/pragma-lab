@@ -13,6 +13,9 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: 'Pragma Lab',
   description: 'A modern web application',
+  icons: {
+    icon: '/car.jpg',
+  },
 }
 
 export default function RootLayout({
