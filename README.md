@@ -13,6 +13,7 @@ Pragma Lab là dự án FullStack được xây dựng trên nền tảng NextJS
 - **Type Safety**: TypeScript
 - **Testing**: Jest và React Testing Library
 
+
 ## Quy tắc đặt tên branch
 
 Các loại branch được phép sử dụng:
