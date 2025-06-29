@@ -63,6 +63,7 @@ export const TripsList = ({
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [viewingTrip, setViewingTrip] = useState<Trip | null>(null)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   const tripApi = React.useMemo(() => new TripApi(), [])
 
@@ -377,6 +378,7 @@ export const TripsList = ({
           if (!open) setEditingTrip(null)
         }}
         trip={editingTrip}
+        onDataChanged={fetchTrips}
       />
       <TripDetailDialog
         open={detailDialogOpen}

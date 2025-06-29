@@ -19,6 +19,8 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { CalendarIcon, Plus, Trash2, GripVertical } from 'lucide-react'
 import { format } from 'date-fns'
+import { vi } from 'date-fns/locale'
+import { toZonedTime, format as formatTz } from 'date-fns-tz'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useLocations } from '@/hooks/use-locations'
@@ -35,6 +37,30 @@ interface TripStop {
   arrivalTime: Date | undefined
   departureTime: Date | undefined
   isPickup: boolean
+}
+
+// Helper function to format time for Vietnam timezone (24-hour format)
+const formatTimeVN = (date: Date) => {
+  if (!date) return ''
+  const vnDate = toZonedTime(date, 'Asia/Ho_Chi_Minh')
+  return formatTz(vnDate, 'HH:mm', { timeZone: 'Asia/Ho_Chi_Minh' })
+}
+
+// Helper function to format date for Vietnam
+const formatDateVN = (date: Date) => {
+  if (!date) return ''
+  const vnDate = toZonedTime(date, 'Asia/Ho_Chi_Minh')
+  return formatTz(vnDate, 'dd/MM/yyyy', { timeZone: 'Asia/Ho_Chi_Minh', locale: vi })
+}
+
+// Helper function to create date with Vietnam timezone (returns UTC date for backend)
+const createDateWithVNTime = (timeString: string, baseDate?: Date) => {
+  const [hours, minutes] = timeString.split(':')
+  // Use the selected departure date as base if provided, else today
+  const date = baseDate ? new Date(baseDate) : new Date()
+  date.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+  date.setSeconds(0, 0)
+  return new Date(date)
 }
 
 export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) => {
@@ -186,12 +212,12 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
 
   const renderStep1 = () => (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Basic Trip Information</h3>
+      <h3 className="text-lg font-semibold">Thông tin chuyến đi</h3>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="vehicle">Vehicle</Label>
+          <Label htmlFor="vehicle">Xe</Label>
           {loadingVehicles ? (
-            <div>Loading vehicles...</div>
+            <div>Đang tải xe...</div>
           ) : errorVehicles ? (
             <div className="text-red-500">{errorVehicles}</div>
           ) : (
@@ -200,7 +226,7 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
               onValueChange={(value) => setFormData({ ...formData, vehicleId: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select vehicle" />
+                <SelectValue placeholder="Chọn xe" />
               </SelectTrigger>
               <SelectContent>
                 {vehicles.map((vehicle) => (
@@ -217,9 +243,9 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="driver">Driver</Label>
+          <Label htmlFor="driver">Tài xế</Label>
           {loadingDrivers ? (
-            <div>Loading drivers...</div>
+            <div>Đang tải tài xế...</div>
           ) : errorDrivers ? (
             <div className="text-red-500">{errorDrivers}</div>
           ) : (
@@ -228,7 +254,7 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
               onValueChange={(value) => setFormData({ ...formData, driverId: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select driver" />
+                <SelectValue placeholder="Chọn tài xế" />
               </SelectTrigger>
               <SelectContent>
                 {drivers.map((driver) => (
@@ -246,7 +272,7 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="departureDate">Departure Date</Label>
+        <Label htmlFor="departureDate">Ngày khởi hành</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -258,8 +284,8 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {formData.departureDate
-                ? format(formData.departureDate, 'PPP')
-                : 'Select departure date'}
+                ? formatDateVN(formData.departureDate)
+                : 'Chọn ngày khởi hành'}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
@@ -268,16 +294,17 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
               selected={formData.departureDate}
               onSelect={(date) => setFormData({ ...formData, departureDate: date })}
               initialFocus
+              locale={vi}
             />
           </PopoverContent>
         </Popover>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="note">Notes</Label>
+        <Label htmlFor="note">Ghi chú</Label>
         <Textarea
           id="note"
-          placeholder="Add any notes about this trip..."
+          placeholder="Thêm ghi chú về chuyến đi..."
           value={formData.note}
           onChange={(e) => setFormData({ ...formData, note: e.target.value })}
           rows={3}
@@ -289,10 +316,10 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
   const renderStep2 = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Trip Stops</h3>
+        <h3 className="text-lg font-semibold">Điểm dừng</h3>
         <Button onClick={handleAddStop} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Add Stop
+          Thêm điểm dừng
         </Button>
       </div>
 
@@ -306,9 +333,9 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <GripVertical className="h-4 w-4 text-gray-400" />
-                  <CardTitle className="text-sm">Stop {index + 1}</CardTitle>
+                  <CardTitle className="text-sm">Điểm dừng {index + 1}</CardTitle>
                   <Badge variant={stop.isPickup ? 'default' : 'secondary'}>
-                    {stop.isPickup ? 'Pickup' : 'Drop-off'}
+                    {stop.isPickup ? 'Đón khách' : 'Trả khách'}
                   </Badge>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => handleRemoveStop(stop.id)}>
@@ -319,7 +346,7 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Location</Label>
+                  <Label>Địa điểm</Label>
                   <Select
                     value={stop.locationId.toString()}
                     onValueChange={(value) =>
@@ -327,7 +354,7 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
+                      <SelectValue placeholder="Chọn địa điểm" />
                     </SelectTrigger>
                     <SelectContent>
                       {locations.map((location) => (
@@ -346,29 +373,28 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Stop Type</Label>
+                  <Label>Loại điểm dừng</Label>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id={`pickup-${stop.id}`}
                       checked={stop.isPickup}
                       onCheckedChange={(checked) => handleStopChange(stop.id, 'isPickup', checked)}
                     />
-                    <Label htmlFor={`pickup-${stop.id}`}>Pickup Location</Label>
+                    <Label htmlFor={`pickup-${stop.id}`}>Điểm đón khách</Label>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Arrival Time</Label>
+                  <Label>Giờ đến</Label>
                   <Input
                     type="time"
-                    value={stop.arrivalTime ? format(stop.arrivalTime, 'HH:mm') : ''}
+                    lang="vi"
+                    value={stop.arrivalTime ? formatTimeVN(stop.arrivalTime) : ''}
                     onChange={(e) => {
                       if (e.target.value) {
-                        const [hours, minutes] = e.target.value.split(':')
-                        const date = new Date()
-                        date.setHours(parseInt(hours), parseInt(minutes))
+                        const date = createDateWithVNTime(e.target.value, formData.departureDate)
                         handleStopChange(stop.id, 'arrivalTime', date)
                       }
                     }}
@@ -376,15 +402,14 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Departure Time</Label>
+                  <Label>Giờ đi</Label>
                   <Input
                     type="time"
-                    value={stop.departureTime ? format(stop.departureTime, 'HH:mm') : ''}
+                    lang="vi"
+                    value={stop.departureTime ? formatTimeVN(stop.departureTime) : ''}
                     onChange={(e) => {
                       if (e.target.value) {
-                        const [hours, minutes] = e.target.value.split(':')
-                        const date = new Date()
-                        date.setHours(parseInt(hours), parseInt(minutes))
+                        const date = createDateWithVNTime(e.target.value, formData.departureDate)
                         handleStopChange(stop.id, 'departureTime', date)
                       }
                     }}
@@ -397,7 +422,7 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
 
         {tripStops.length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            <p>No stops added yet. Click "Add Stop" to create your first stop.</p>
+            <p>Chưa có điểm dừng nào. Nhấn "Thêm điểm dừng" để tạo điểm dừng đầu tiên.</p>
           </div>
         )}
       </div>
@@ -406,54 +431,54 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
 
   const renderStep3 = () => (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Review & Confirm</h3>
+      <h3 className="text-lg font-semibold">Xem lại & Xác nhận</h3>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Trip Summary</CardTitle>
+          <CardTitle className="text-base">Tóm tắt chuyến đi</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium">Vehicle</Label>
+              <Label className="text-sm font-medium">Xe</Label>
               <p className="text-sm text-gray-600">
                 {vehicles.find((v) => v.vehicleId.toString() === formData.vehicleId)
-                  ?.licensePlate || 'Not selected'}
+                  ?.licensePlate || 'Chưa chọn'}
               </p>
             </div>
             <div>
-              <Label className="text-sm font-medium">Driver</Label>
+              <Label className="text-sm font-medium">Tài xế</Label>
               <p className="text-sm text-gray-600">
                 {drivers.find((d) => d.userId.toString() === formData.driverId)?.name ||
-                  'Not selected'}
+                  'Chưa chọn'}
               </p>
             </div>
           </div>
 
           <div>
-            <Label className="text-sm font-medium">Departure Date</Label>
+            <Label className="text-sm font-medium">Ngày khởi hành</Label>
             <p className="text-sm text-gray-600">
-              {formData.departureDate ? format(formData.departureDate, 'PPP') : 'Not selected'}
+              {formData.departureDate ? formatDateVN(formData.departureDate) : 'Chưa chọn'}
             </p>
           </div>
 
           <div>
-            <Label className="text-sm font-medium">Notes</Label>
-            <p className="text-sm text-gray-600">{formData.note || 'No notes'}</p>
+            <Label className="text-sm font-medium">Ghi chú</Label>
+            <p className="text-sm text-gray-600">{formData.note || 'Không có ghi chú'}</p>
           </div>
 
           <div>
-            <Label className="text-sm font-medium">Trip Stops ({tripStops.length})</Label>
+            <Label className="text-sm font-medium">Điểm dừng ({tripStops.length})</Label>
             <div className="space-y-2 mt-1">
               {tripStops.map((stop, index) => {
                 const location = locations.find((l: any) => l.locationId === stop.locationId)
                 return (
                   <div key={stop.id} className="flex items-center justify-between text-sm">
                     <span>
-                      {index + 1}. {location?.detail || 'Unknown location'}
+                      {index + 1}. {location?.detail || 'Địa điểm chưa xác định'}
                     </span>
                     <Badge variant={stop.isPickup ? 'default' : 'secondary'} className="text-xs">
-                      {stop.isPickup ? 'Pickup' : 'Drop-off'}
+                      {stop.isPickup ? 'Đón khách' : 'Trả khách'}
                     </Badge>
                   </div>
                 )
@@ -469,7 +494,7 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Trip</DialogTitle>
+          <DialogTitle>Tạo chuyến đi mới</DialogTitle>
         </DialogHeader>
 
         {renderStepIndicator()}
@@ -482,17 +507,17 @@ export const CreateTripDialog = ({ open, onOpenChange }: CreateTripDialogProps) 
 
         <div className="flex justify-between pt-4">
           <Button variant="outline" onClick={handleBack} disabled={currentStep === 1}>
-            Back
+            Quay lại
           </Button>
 
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              Hủy
             </Button>
             {currentStep < 3 ? (
-              <Button onClick={handleNext}>Next</Button>
+              <Button onClick={handleNext}>Tiếp tục</Button>
             ) : (
-              <Button onClick={handleSubmit}>Create Trip</Button>
+              <Button onClick={handleSubmit}>Tạo chuyến đi</Button>
             )}
           </div>
         </div>

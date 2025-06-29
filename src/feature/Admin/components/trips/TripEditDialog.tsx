@@ -34,6 +34,7 @@ interface TripEditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   trip?: any
+  onDataChanged?: () => void
 }
 
 interface TripStop {
@@ -49,7 +50,12 @@ interface TripStop {
 // Fetcher for SWR
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-export const TripEditDialog = ({ open, onOpenChange, trip }: TripEditDialogProps) => {
+export const TripEditDialog = ({
+  open,
+  onOpenChange,
+  trip,
+  onDataChanged,
+}: TripEditDialogProps) => {
   const [tripStops, setTripStops] = useState<TripStop[]>([])
 
   const form = useForm({
@@ -166,6 +172,7 @@ export const TripEditDialog = ({ open, onOpenChange, trip }: TripEditDialogProps
             ? `Trip #${trip.tripId?.toString().padStart(4, '0')} updated successfully`
             : 'Trip created successfully',
         )
+        if (onDataChanged) onDataChanged()
         onOpenChange(false)
       } else {
         toast.error(result.message || 'Operation failed')
