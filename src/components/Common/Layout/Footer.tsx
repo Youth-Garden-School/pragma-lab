@@ -84,7 +84,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="h-5 w-5 text-blue-600" />
-                <span>123 Đường ABC, Quận 1, TP.HCM</span>
+                <span>123 D5, Quận 1, TP.HCM</span>
               </div>
             </div>
           </div>
@@ -93,12 +93,12 @@ const Footer = () => {
         {/* Bottom Footer */}
         <div className="border-t border-gray-200 pt-6 text-center md:text-left">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-500 text-sm">© 2024 DATVEXE. Tất cả quyền được bảo lưu.</p>
+            <p className="text-gray-500 text-sm">2025 DATVEXE. Tất cả quyền được bảo lưu.</p>
             <div className="flex space-x-4 text-sm text-gray-500 mt-2 md:mt-0">
-              <a href="#" className="hover:text-blue-600 transition-colors">
+              <a href="/support" className="hover:text-blue-600 transition-colors">
                 Chính sách bảo mật
               </a>
-              <a href="#" className="hover:text-blue-600 transition-colors">
+              <a href="/support" className="hover:text-blue-600 transition-colors">
                 Điều khoản dịch vụ
               </a>
             </div>

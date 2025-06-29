@@ -39,11 +39,11 @@ export function TopContactBar({ scrolled, isDesktop, onLoginClick }: TopContactB
           <div className="hidden md:flex items-center space-x-6 text-xs">
             <div className="flex items-center space-x-1 text-gray-600">
               <Icons.phone className="w-3 h-3" />
-              <span>1900-6888</span>
+              <span>1900 6888</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-600">
               <Icons.mail className="w-3 h-3" />
-              <span>support@busmanager.vn</span>
+              <span>support@datvexe.vn</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-600">
               <Icons.mapPin className="w-3 h-3" />
