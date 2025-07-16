@@ -1,8 +1,7 @@
 // pages/api/locations/[id].ts
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { PrismaClient, Locations, TripStops, Trips } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '@/configs/prisma/prisma'
 
 interface UpdateLocationBody {
   detail: string
@@ -26,26 +25,23 @@ interface ApiResponse<T = any> {
   message?: string
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiResponse>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResponse>) {
   try {
     const { id } = req.query
-    
+
     if (!id || Array.isArray(id)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Invalid location ID' 
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid location ID',
       })
     }
 
     const locationId = parseInt(id)
 
     if (isNaN(locationId) || locationId < 1) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Invalid location ID' 
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid location ID',
       })
     }
 
@@ -58,16 +54,16 @@ export default async function handler(
         return await deleteLocation(req, res, locationId)
       default:
         res.setHeader('Allow', ['GET', 'PUT', 'DELETE'])
-        return res.status(405).json({ 
-          success: false, 
-          error: 'Method not allowed' 
+        return res.status(405).json({
+          success: false,
+          error: 'Method not allowed',
         })
     }
   } catch (error) {
     console.error('API Error:', error)
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
     })
   } finally {
     await prisma.$disconnect()
@@ -78,12 +74,12 @@ export default async function handler(
 async function getLocation(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse<LocationWithTrips>>,
-  locationId: number
+  locationId: number,
 ) {
   try {
     const location = await prisma.locations.findUnique({
       where: {
-        locationId
+        locationId,
       },
       include: {
         tripStops: {
@@ -92,35 +88,35 @@ async function getLocation(
               select: {
                 tripId: true,
                 status: true,
-                createdAt: true
-              }
-            }
+                createdAt: true,
+              },
+            },
           },
           orderBy: {
             trip: {
-              createdAt: 'desc'
-            }
-          }
-        }
-      }
+              createdAt: 'desc',
+            },
+          },
+        },
+      },
     })
 
     if (!location) {
       return res.status(404).json({
         success: false,
-        error: 'Location not found'
+        error: 'Location not found',
       })
     }
 
     return res.status(200).json({
       success: true,
-      data: location as LocationWithTrips
+      data: location as LocationWithTrips,
     })
   } catch (error) {
     console.error('Get location error:', error)
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch location' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch location',
     })
   }
 }
@@ -129,7 +125,7 @@ async function getLocation(
 async function updateLocation(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse<Locations>>,
-  locationId: number
+  locationId: number,
 ) {
   try {
     const { detail, province }: UpdateLocationBody = req.body
@@ -138,14 +134,14 @@ async function updateLocation(
     if (!detail || typeof detail !== 'string') {
       return res.status(400).json({
         success: false,
-        error: 'Detail is required and must be a string'
+        error: 'Detail is required and must be a string',
       })
     }
 
     if (!province || typeof province !== 'string') {
       return res.status(400).json({
         success: false,
-        error: 'Province is required and must be a string'
+        error: 'Province is required and must be a string',
       })
     }
 
@@ -153,26 +149,26 @@ async function updateLocation(
     if (trimmedDetail.length < 3) {
       return res.status(400).json({
         success: false,
-        error: 'Location name must be at least 3 characters'
+        error: 'Location name must be at least 3 characters',
       })
     }
 
     if (trimmedDetail.length > 255) {
       return res.status(400).json({
         success: false,
-        error: 'Location name must not exceed 255 characters'
+        error: 'Location name must not exceed 255 characters',
       })
     }
 
     // Check if location exists
     const existingLocation = await prisma.locations.findUnique({
-      where: { locationId }
+      where: { locationId },
     })
 
     if (!existingLocation) {
       return res.status(404).json({
         success: false,
-        error: 'Location not found'
+        error: 'Location not found',
       })
     }
 
@@ -181,19 +177,19 @@ async function updateLocation(
       where: {
         detail: {
           equals: trimmedDetail,
-          mode: 'insensitive'
+          mode: 'insensitive',
         },
         province,
         NOT: {
-          locationId
-        }
-      }
+          locationId,
+        },
+      },
     })
 
     if (duplicateLocation) {
       return res.status(409).json({
         success: false,
-        error: 'Location already exists in this province'
+        error: 'Location already exists in this province',
       })
     }
 
@@ -202,20 +198,20 @@ async function updateLocation(
       where: { locationId },
       data: {
         detail: trimmedDetail,
-        province
-      }
+        province,
+      },
     })
 
     return res.status(200).json({
       success: true,
       data: updatedLocation,
-      message: 'Location updated successfully'
+      message: 'Location updated successfully',
     })
   } catch (error) {
     console.error('Update location error:', error)
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to update location' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update location',
     })
   }
 }
@@ -224,7 +220,7 @@ async function updateLocation(
 async function deleteLocation(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse>,
-  locationId: number
+  locationId: number,
 ) {
   try {
     // Check if location exists
@@ -235,30 +231,30 @@ async function deleteLocation(
           include: {
             trip: {
               select: {
-                status: true
-              }
-            }
-          }
-        }
-      }
+                status: true,
+              },
+            },
+          },
+        },
+      },
     })
 
     if (!existingLocation) {
       return res.status(404).json({
         success: false,
-        error: 'Location not found'
+        error: 'Location not found',
       })
     }
 
     // Check if location is being used in any active trips
     const activeTrips = existingLocation.tripStops.filter(
-      stop => stop.trip.status === 'upcoming' || stop.trip.status === 'ongoing'
+      (stop) => stop.trip.status === 'upcoming' || stop.trip.status === 'ongoing',
     )
 
     if (activeTrips.length > 0) {
       return res.status(400).json({
         success: false,
-        error: `Cannot delete location. It is being used in ${activeTrips.length} active trip(s).`
+        error: `Cannot delete location. It is being used in ${activeTrips.length} active trip(s).`,
       })
     }
 
@@ -267,24 +263,24 @@ async function deleteLocation(
     if (existingLocation.tripStops.length > 0) {
       return res.status(400).json({
         success: false,
-        error: 'Cannot delete location. It has trip history. Consider archiving instead.'
+        error: 'Cannot delete location. It has trip history. Consider archiving instead.',
       })
     }
 
     // Delete location
     await prisma.locations.delete({
-      where: { locationId }
+      where: { locationId },
     })
 
     return res.status(200).json({
       success: true,
-      message: 'Location deleted successfully'
+      message: 'Location deleted successfully',
     })
   } catch (error) {
     console.error('Delete location error:', error)
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to delete location' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to delete location',
     })
   }
 }

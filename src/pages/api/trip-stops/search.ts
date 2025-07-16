@@ -1,7 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '@/configs/prisma/prisma'
 
 interface SearchTripStopsQuery {
   search?: string
@@ -180,7 +178,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       success: false,
       error: 'Failed to search trip stops',
     })
-  } finally {
-    await prisma.$disconnect()
   }
 }

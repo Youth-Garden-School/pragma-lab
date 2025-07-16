@@ -1,8 +1,6 @@
 // pages/api/vehicles/index.ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '@/configs/prisma/prisma'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -18,8 +16,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('API Error:', error)
     return res.status(500).json({ error: 'Internal server error' })
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
