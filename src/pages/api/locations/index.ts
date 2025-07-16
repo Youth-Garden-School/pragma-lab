@@ -1,8 +1,7 @@
 // pages/api/locations/index.ts
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { PrismaClient, Locations } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '@/configs/prisma/prisma'
 
 interface GetLocationsQuery {
   search?: string
@@ -29,10 +28,7 @@ interface ApiResponse<T = any> {
   }
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiResponse>
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResponse>) {
   try {
     switch (req.method) {
       case 'GET':
@@ -41,40 +37,35 @@ export default async function handler(
         return await createLocation(req, res)
       default:
         res.setHeader('Allow', ['GET', 'POST'])
-        return res.status(405).json({ 
-          success: false, 
-          error: 'Method not allowed' 
+        return res.status(405).json({
+          success: false,
+          error: 'Method not allowed',
         })
     }
   } catch (error) {
     console.error('API Error:', error)
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Internal server error' 
+    return res.status(500).json({
+      success: false,
+      error: 'Internal server error',
     })
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
 // GET /api/locations - Lấy danh sách locations với filter và search
-async function getLocations(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiResponse<Locations[]>>
-) {
+async function getLocations(req: NextApiRequest, res: NextApiResponse<ApiResponse<Locations[]>>) {
   try {
     const { search, province, page = '1', limit = '10' } = req.query as GetLocationsQuery
 
     // Build where clause
     const where: any = {}
-    
+
     if (search) {
       where.detail = {
         contains: search,
-        mode: 'insensitive'
+        mode: 'insensitive',
       }
     }
-    
+
     if (province && province !== 'All Provinces') {
       where.province = province
     }
@@ -87,14 +78,14 @@ async function getLocations(
     if (isNaN(pageNum) || pageNum < 1) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid page number'
+        error: 'Invalid page number',
       })
     }
 
     if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid limit (must be between 1 and 100)'
+        error: 'Invalid limit (must be between 1 and 100)',
       })
     }
 
@@ -105,10 +96,10 @@ async function getLocations(
         skip,
         take: limitNum,
         orderBy: {
-          locationId: 'desc'
-        }
+          locationId: 'desc',
+        },
       }),
-      prisma.locations.count({ where })
+      prisma.locations.count({ where }),
     ])
 
     return res.status(200).json({
@@ -118,23 +109,20 @@ async function getLocations(
         total,
         page: pageNum,
         limit: limitNum,
-        totalPages: Math.ceil(total / limitNum)
-      }
+        totalPages: Math.ceil(total / limitNum),
+      },
     })
   } catch (error) {
     console.error('Get locations error:', error)
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch locations' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch locations',
     })
   }
 }
 
 // POST /api/locations - Tạo location mới
-async function createLocation(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiResponse<Locations>>
-) {
+async function createLocation(req: NextApiRequest, res: NextApiResponse<ApiResponse<Locations>>) {
   try {
     const { detail, province }: CreateLocationBody = req.body
 
@@ -142,14 +130,14 @@ async function createLocation(
     if (!detail || typeof detail !== 'string') {
       return res.status(400).json({
         success: false,
-        error: 'Detail is required and must be a string'
+        error: 'Detail is required and must be a string',
       })
     }
 
     if (!province || typeof province !== 'string') {
       return res.status(400).json({
         success: false,
-        error: 'Province is required and must be a string'
+        error: 'Province is required and must be a string',
       })
     }
 
@@ -157,14 +145,14 @@ async function createLocation(
     if (trimmedDetail.length < 3) {
       return res.status(400).json({
         success: false,
-        error: 'Location name must be at least 3 characters'
+        error: 'Location name must be at least 3 characters',
       })
     }
 
     if (trimmedDetail.length > 255) {
       return res.status(400).json({
         success: false,
-        error: 'Location name must not exceed 255 characters'
+        error: 'Location name must not exceed 255 characters',
       })
     }
 
@@ -173,16 +161,16 @@ async function createLocation(
       where: {
         detail: {
           equals: trimmedDetail,
-          mode: 'insensitive'
+          mode: 'insensitive',
         },
-        province
-      }
+        province,
+      },
     })
 
     if (existingLocation) {
       return res.status(409).json({
         success: false,
-        error: 'Location already exists in this province'
+        error: 'Location already exists in this province',
       })
     }
 
@@ -190,20 +178,20 @@ async function createLocation(
     const newLocation = await prisma.locations.create({
       data: {
         detail: trimmedDetail,
-        province
-      }
+        province,
+      },
     })
 
     return res.status(201).json({
       success: true,
       data: newLocation,
-      message: 'Location created successfully'
+      message: 'Location created successfully',
     })
   } catch (error) {
     console.error('Create location error:', error)
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to create location' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to create location',
     })
   }
 }

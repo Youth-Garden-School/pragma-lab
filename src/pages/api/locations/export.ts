@@ -1,13 +1,9 @@
 // pages/api/locations/export.ts
 import { NextApiRequest, NextApiResponse } from 'next'
 import { PrismaClient } from '@prisma/client'
+import prisma from '@/configs/prisma/prisma'
 
-const prisma = new PrismaClient()
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-): Promise<void> {
+export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   try {
     if (req.method !== 'GET') {
       res.setHeader('Allow', ['GET'])
@@ -19,17 +15,16 @@ export default async function handler(
   } catch (error) {
     console.error('API Error:', error)
     res.status(500).json({ error: 'Internal server error' })
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
-async function exportLocations(
-  req: NextApiRequest,
-  res: NextApiResponse
-): Promise<void> {
+async function exportLocations(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   try {
-    const { format = 'csv', search, province } = req.query as {
+    const {
+      format = 'csv',
+      search,
+      province,
+    } = req.query as {
       format?: string
       search?: string
       province?: string

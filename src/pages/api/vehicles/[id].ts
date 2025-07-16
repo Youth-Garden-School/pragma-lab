@@ -1,8 +1,6 @@
 // pages/api/vehicles/[id].ts
 import { NextApiRequest, NextApiResponse } from 'next'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '@/configs/prisma/prisma'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -12,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (isNaN(vehicleId)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid vehicle ID'
+        error: 'Invalid vehicle ID',
       })
     }
 
@@ -30,8 +28,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.error('API Error:', error)
     return res.status(500).json({ error: 'Internal server error' })
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
@@ -45,8 +41,8 @@ async function getVehicle(vehicleId: number, res: NextApiResponse) {
             vehicleTypeId: true,
             name: true,
             seatCapacity: true,
-            pricePerSeat: true
-          }
+            pricePerSeat: true,
+          },
         },
         trips: {
           include: {
@@ -54,8 +50,8 @@ async function getVehicle(vehicleId: number, res: NextApiResponse) {
               select: {
                 userId: true,
                 name: true,
-                phone: true
-              }
+                phone: true,
+              },
             },
             tripStops: {
               include: {
@@ -63,43 +59,43 @@ async function getVehicle(vehicleId: number, res: NextApiResponse) {
                   select: {
                     locationId: true,
                     detail: true,
-                    province: true
-                  }
-                }
+                    province: true,
+                  },
+                },
               },
               orderBy: {
-                stopOrder: 'asc'
-              }
+                stopOrder: 'asc',
+              },
             },
             _count: {
               select: {
-                tickets: true
-              }
-            }
+                tickets: true,
+              },
+            },
           },
           orderBy: {
-            createdAt: 'desc'
-          }
-        }
-      }
+            createdAt: 'desc',
+          },
+        },
+      },
     })
 
     if (!vehicle) {
       return res.status(404).json({
         success: false,
-        error: 'Vehicle not found'
+        error: 'Vehicle not found',
       })
     }
 
     return res.status(200).json({
       success: true,
-      data: vehicle
+      data: vehicle,
     })
   } catch (error) {
     console.error('Get vehicle error:', error)
     return res.status(500).json({
       success: false,
-      error: 'Failed to fetch vehicle'
+      error: 'Failed to fetch vehicle',
     })
   }
 }
@@ -110,13 +106,13 @@ async function updateVehicle(vehicleId: number, req: NextApiRequest, res: NextAp
 
     // Check if vehicle exists
     const existingVehicle = await prisma.vehicles.findUnique({
-      where: { vehicleId }
+      where: { vehicleId },
     })
 
     if (!existingVehicle) {
       return res.status(404).json({
         success: false,
-        error: 'Vehicle not found'
+        error: 'Vehicle not found',
       })
     }
 
@@ -124,7 +120,7 @@ async function updateVehicle(vehicleId: number, req: NextApiRequest, res: NextAp
     if (!licensePlate || !vehicleTypeId) {
       return res.status(400).json({
         success: false,
-        error: 'License plate and vehicle type are required'
+        error: 'License plate and vehicle type are required',
       })
     }
 
@@ -133,7 +129,7 @@ async function updateVehicle(vehicleId: number, req: NextApiRequest, res: NextAp
     if (!vietnamLicensePlateRegex.test(licensePlate.trim())) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid license plate format. Use format: 12A-34567'
+        error: 'Invalid license plate format. Use format: 12A-34567',
       })
     }
 
@@ -142,30 +138,30 @@ async function updateVehicle(vehicleId: number, req: NextApiRequest, res: NextAp
       where: {
         licensePlate: {
           equals: licensePlate.trim(),
-          mode: 'insensitive'
+          mode: 'insensitive',
         },
         vehicleId: {
-          not: vehicleId
-        }
-      }
+          not: vehicleId,
+        },
+      },
     })
 
     if (duplicateLicensePlate) {
       return res.status(409).json({
         success: false,
-        error: 'Vehicle with this license plate already exists'
+        error: 'Vehicle with this license plate already exists',
       })
     }
 
     // Check if vehicle type exists
     const vehicleType = await prisma.vehicleTypes.findUnique({
-      where: { vehicleTypeId: parseInt(vehicleTypeId) }
+      where: { vehicleTypeId: parseInt(vehicleTypeId) },
     })
 
     if (!vehicleType) {
       return res.status(404).json({
         success: false,
-        error: 'Vehicle type not found'
+        error: 'Vehicle type not found',
       })
     }
 
@@ -173,7 +169,7 @@ async function updateVehicle(vehicleId: number, req: NextApiRequest, res: NextAp
       where: { vehicleId },
       data: {
         licensePlate: licensePlate.trim().toUpperCase(),
-        vehicleTypeId: parseInt(vehicleTypeId)
+        vehicleTypeId: parseInt(vehicleTypeId),
       },
       include: {
         vehicleType: {
@@ -181,22 +177,22 @@ async function updateVehicle(vehicleId: number, req: NextApiRequest, res: NextAp
             vehicleTypeId: true,
             name: true,
             seatCapacity: true,
-            pricePerSeat: true
-          }
-        }
-      }
+            pricePerSeat: true,
+          },
+        },
+      },
     })
 
     return res.status(200).json({
       success: true,
       data: updatedVehicle,
-      message: 'Vehicle updated successfully'
+      message: 'Vehicle updated successfully',
     })
   } catch (error) {
     console.error('Update vehicle error:', error)
     return res.status(500).json({
       success: false,
-      error: 'Failed to update vehicle'
+      error: 'Failed to update vehicle',
     })
   }
 }
@@ -210,17 +206,17 @@ async function deleteVehicle(vehicleId: number, res: NextApiResponse) {
         trips: {
           where: {
             status: {
-              in: ['upcoming', 'ongoing']
-            }
-          }
-        }
-      }
+              in: ['upcoming', 'ongoing'],
+            },
+          },
+        },
+      },
     })
 
     if (!existingVehicle) {
       return res.status(404).json({
         success: false,
-        error: 'Vehicle not found'
+        error: 'Vehicle not found',
       })
     }
 
@@ -228,24 +224,24 @@ async function deleteVehicle(vehicleId: number, res: NextApiResponse) {
     if (existingVehicle.trips.length > 0) {
       return res.status(400).json({
         success: false,
-        error: 'Cannot delete vehicle that has upcoming or ongoing trips'
+        error: 'Cannot delete vehicle that has upcoming or ongoing trips',
       })
     }
 
     // Delete the vehicle
     await prisma.vehicles.delete({
-      where: { vehicleId }
+      where: { vehicleId },
     })
 
     return res.status(200).json({
       success: true,
-      message: 'Vehicle deleted successfully'
+      message: 'Vehicle deleted successfully',
     })
   } catch (error) {
     console.error('Delete vehicle error:', error)
     return res.status(500).json({
       success: false,
-      error: 'Failed to delete vehicle'
+      error: 'Failed to delete vehicle',
     })
   }
 }
